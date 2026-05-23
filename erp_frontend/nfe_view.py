@@ -95,12 +95,8 @@ class NFeView(ctk.CTkFrame):
         self.btn_simulate = ctk.CTkButton(self.footer, text="[F9] SIMULAR IMPACTO", font=("Roboto", 16, "bold"), fg_color="#f39c12", hover_color="#d68910", command=self.run_simulation, state="disabled")
         self.btn_simulate.pack(side="right", padx=10)
         
-        self.btn_validate = ctk.CTkButton(self.footer, text="[F6] VALIDAR ITENS", font=("Roboto", 16, "bold"), fg_color="#3498db", hover_color="#2980b9", command=self.run_validation, state="disabled")
-        self.btn_validate.pack(side="right", padx=10)
-
     def bind_shortcuts(self):
         self.app_window.bind("<F5>", lambda e: self.select_file())
-        self.app_window.bind("<F6>", lambda e: self.run_validation())
         self.app_window.bind("<F9>", lambda e: self.run_simulation())
         self.app_window.bind("<F10>", lambda e: self.import_nfe())
         self.app_window.bind("<Return>", lambda e: self.next_step())
@@ -108,7 +104,6 @@ class NFeView(ctk.CTkFrame):
 
     def unbind_shortcuts(self):
         self.app_window.unbind("<F5>")
-        self.app_window.unbind("<F6>")
         self.app_window.unbind("<F9>")
         self.app_window.unbind("<F10>")
         self.app_window.unbind("<Return>")
@@ -139,12 +134,12 @@ class NFeView(ctk.CTkFrame):
                 self.lbl_chave.configure(text=f"CHAVE: {header.get('chave_acesso', 'Não encontrada')}", text_color="white")
                 self.lbl_totais.configure(text=f"EMISSÃO: {header.get('data_emissao', '--')}  |  TOTAL: R$ {header.get('valor_total', 0):.2f}", text_color="#2ecc71")
                 
-                for item in self.table.get_children(): self.table.delete(item)
-                
                 self.step = 1
-                self.btn_validate.configure(state="normal")
                 self.btn_simulate.configure(state="disabled")
                 self.btn_import.configure(state="disabled")
+                
+                # Aciona validação automática
+                self.run_validation()
             except Exception as e:
                 messagebox.showerror("Erro", f"Erro ao ler XML: {e}")
 
@@ -229,6 +224,13 @@ class NFeView(ctk.CTkFrame):
     def run_simulation(self):
         if self.step < 2: return
         
+        if self.simulated_stats['new'] > 0:
+            messagebox.showwarning("Ação Obrigatória", 
+                                   f"Existem {self.simulated_stats['new']} produtos NOVOS não mapeados.\n\n"
+                                   f"Para AutoCenters, é obrigatório registrar o Preço de Varejo de todas as peças antes de concluir a importação.\n\n"
+                                   f"Dê um duplo-clique nas linhas amarelas na tabela para cadastrá-las.")
+            return
+            
         self.lbl_sum_items.configure(text=f"TOTAL DE ITENS: {self.simulated_stats['items']}")
         self.lbl_sum_stock.configure(text=f"IMPACTO ESTOQUE: +{self.simulated_stats['stock']} un")
         self.lbl_sum_new.configure(text=f"NOVOS PRODUTOS: {self.simulated_stats['new']}")
@@ -251,9 +253,11 @@ class NFeView(ctk.CTkFrame):
         elif item_iid.startswith("novo_"):
             idx = int(item_iid.split("_")[1])
             item_data = self.current_parsed_data['items'][idx]
+            ean = item_data['cEAN'] if item_data['cEAN'] and 'SEM GTIN' not in item_data['cEAN'].upper() else ""
             init_data = {
                 'nome': item_data['xProd'], 'sku': item_data['cProd'],
-                'codigo_barras': item_data['cEAN'] if item_data['cEAN'] and 'SEM GTIN' not in item_data['cEAN'].upper() else "",
+                'codigo_barras': ean,
+                'cfop_padrao': item_data.get('CFOP', ''),
                 'custo': float(item_data['vUnCom']) }
             ProductModal(self, initial_data=init_data, on_save=self.run_validation)
 
@@ -277,6 +281,5 @@ class NFeView(ctk.CTkFrame):
         self.lbl_fornecedor.configure(text="FORNECEDOR: --", text_color="#aaaaaa")
         self.lbl_chave.configure(text="CHAVE: --", text_color="#aaaaaa")
         self.lbl_totais.configure(text="EMISSÃO: --  |  TOTAL: --", text_color="#aaaaaa")
-        self.btn_validate.configure(state="disabled")
         self.btn_simulate.configure(state="disabled")
         self.btn_import.configure(state="disabled")

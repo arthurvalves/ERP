@@ -39,9 +39,24 @@ class ProductModal(ctk.CTkToplevel):
         
         f_ean = ctk.CTkFrame(row1, fg_color="transparent")
         f_ean.pack(side="left", fill="x", expand=True, padx=(5, 0))
-        ctk.CTkLabel(f_ean, text="EAN (Cód. Barras):", font=("Roboto", 12)).pack(anchor="w")
+        ctk.CTkLabel(f_ean, text="EAN:", font=("Roboto", 12)).pack(anchor="w")
         self.ent_ean = ctk.CTkEntry(f_ean, font=("Roboto", 14))
         self.ent_ean.pack(fill="x")
+        
+        row1_5 = ctk.CTkFrame(self.frame, fg_color="transparent")
+        row1_5.pack(fill="x", pady=5)
+        
+        f_cfop = ctk.CTkFrame(row1_5, fg_color="transparent")
+        f_cfop.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        ctk.CTkLabel(f_cfop, text="CFOP Padrão:", font=("Roboto", 12)).pack(anchor="w")
+        self.ent_cfop = ctk.CTkEntry(f_cfop, font=("Roboto", 14))
+        self.ent_cfop.pack(fill="x")
+        
+        f_tipo = ctk.CTkFrame(row1_5, fg_color="transparent")
+        f_tipo.pack(side="left", fill="x", expand=True, padx=(5, 0))
+        ctk.CTkLabel(f_tipo, text="Tipo de Item:", font=("Roboto", 12)).pack(anchor="w")
+        self.cb_tipo = ctk.CTkOptionMenu(f_tipo, values=["Produto", "Serviço"])
+        self.cb_tipo.pack(fill="x")
         
         ctk.CTkLabel(self.frame, text="Custo Unitário (R$):", font=("Roboto", 14, "bold")).pack(anchor="w", pady=(15, 0))
         self.ent_custo = ctk.CTkEntry(self.frame, font=("Roboto", 14), width=200)
@@ -51,19 +66,24 @@ class ProductModal(ctk.CTkToplevel):
         row2 = ctk.CTkFrame(self.frame, fg_color="transparent")
         row2.pack(fill="x", pady=15)
         
-        f_margem = ctk.CTkFrame(row2, fg_color="transparent")
-        f_margem.pack(side="left", fill="x", expand=True, padx=(0, 5))
-        ctk.CTkLabel(f_margem, text="Margem Lucro (%):", font=("Roboto", 14, "bold"), text_color="#3498db").pack(anchor="w")
-        self.ent_margem = ctk.CTkEntry(f_margem, font=("Roboto", 16, "bold"))
+        f_atacado = ctk.CTkFrame(row2, fg_color="transparent")
+        f_atacado.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        ctk.CTkLabel(f_atacado, text="Preço Atacado (R$):", font=("Roboto", 14, "bold"), text_color="#f39c12").pack(anchor="w")
+        self.ent_atacado = ctk.CTkEntry(f_atacado, font=("Roboto", 16, "bold"))
+        self.ent_atacado.pack(fill="x")
+        
+        f_preco_container = ctk.CTkFrame(row2, fg_color="transparent")
+        f_preco_container.pack(side="left", fill="x", expand=True, padx=(5, 0))
+        
+        ctk.CTkLabel(f_preco_container, text="Preço Varejo (R$):", font=("Roboto", 16, "bold"), text_color="#2ecc71").pack(anchor="w")
+        self.ent_preco = ctk.CTkEntry(f_preco_container, font=("Roboto", 24, "bold"), text_color="#ffffff")
+        self.ent_preco.pack(fill="x", pady=(0, 10))
+        self.ent_preco.bind("<KeyRelease>", self.on_price_change)
+        
+        ctk.CTkLabel(f_preco_container, text="Margem Lucro (%):", font=("Roboto", 12, "bold"), text_color="#3498db").pack(anchor="w")
+        self.ent_margem = ctk.CTkEntry(f_preco_container, font=("Roboto", 14, "bold"))
         self.ent_margem.pack(fill="x")
         self.ent_margem.bind("<KeyRelease>", self.on_margin_change)
-        
-        f_preco = ctk.CTkFrame(row2, fg_color="transparent")
-        f_preco.pack(side="left", fill="x", expand=True, padx=(5, 0))
-        ctk.CTkLabel(f_preco, text="Preço Venda (R$):", font=("Roboto", 14, "bold"), text_color="#2ecc71").pack(anchor="w")
-        self.ent_preco = ctk.CTkEntry(f_preco, font=("Roboto", 16, "bold"))
-        self.ent_preco.pack(fill="x")
-        self.ent_preco.bind("<KeyRelease>", self.on_price_change)
         
         footer = ctk.CTkFrame(self.frame, fg_color="transparent")
         footer.pack(fill="x", side="bottom", pady=20)
@@ -76,15 +96,20 @@ class ProductModal(ctk.CTkToplevel):
             self.ent_nome.insert(0, self.initial_data.get('nome', ''))
             self.ent_sku.insert(0, self.initial_data.get('sku', ''))
             self.ent_ean.insert(0, self.initial_data.get('codigo_barras', ''))
+            self.ent_cfop.insert(0, self.initial_data.get('cfop_padrao', ''))
+            self.ent_atacado.insert(0, f"{self.initial_data.get('preco_atacado', 0.0):.2f}")
+            self.cb_tipo.set("Serviço" if self.initial_data.get('is_servico') else "Produto")
+            
             custo = self.initial_data.get('custo', 0.0)
             self.ent_custo.insert(0, f"{custo:.2f}")
             self.ent_preco.insert(0, "0.00")
             self.ent_margem.insert(0, "0.00")
+            self._update_margin_color(0.0)
             return
             
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute("SELECT nome, sku, codigo_barras, custo, preco_venda FROM products WHERE id = ?", (self.product_id,))
+        cur.execute("SELECT nome, sku, codigo_barras, custo, preco_venda, cfop_padrao, preco_atacado, is_servico FROM products WHERE id = ?", (self.product_id,))
         row = cur.fetchone()
         conn.close()
         
@@ -92,11 +117,21 @@ class ProductModal(ctk.CTkToplevel):
             self.ent_nome.insert(0, row['nome'] or "")
             self.ent_sku.insert(0, row['sku'] or "")
             self.ent_ean.insert(0, row['codigo_barras'] or "")
+            self.ent_cfop.insert(0, row['cfop_padrao'] or "")
+            self.ent_atacado.insert(0, f"{row['preco_atacado'] or 0.0:.2f}")
+            self.cb_tipo.set("Serviço" if row['is_servico'] else "Produto")
+            
             custo = row['custo'] or 0.0
             preco = row['preco_venda'] or 0.0
             self.ent_custo.insert(0, f"{custo:.2f}")
             self.ent_preco.insert(0, f"{preco:.2f}")
             self.on_price_change()
+
+    def _update_margin_color(self, margem: float):
+        if margem < 0:
+            self.ent_margem.configure(text_color="#e74c3c")
+        else:
+            self.ent_margem.configure(text_color="#ffffff")
 
     def on_cost_change(self, event=None):
         self.on_margin_change()
@@ -113,6 +148,7 @@ class ProductModal(ctk.CTkToplevel):
                 margem = 100.0 if preco > 0 else 0.0
             self.ent_margem.delete(0, "end")
             self.ent_margem.insert(0, f"{margem:.2f}")
+            self._update_margin_color(margem)
         except ValueError:
             pass
         self._updating = False
@@ -126,6 +162,7 @@ class ProductModal(ctk.CTkToplevel):
             preco = custo + (custo * (margem / 100))
             self.ent_preco.delete(0, "end")
             self.ent_preco.insert(0, f"{preco:.2f}")
+            self._update_margin_color(margem)
         except ValueError:
             pass
         self._updating = False
@@ -134,9 +171,13 @@ class ProductModal(ctk.CTkToplevel):
         nome = self.ent_nome.get().strip()
         sku = self.ent_sku.get().strip()
         ean = self.ent_ean.get().strip()
+        cfop = self.ent_cfop.get().strip()
+        is_servico = 1 if self.cb_tipo.get() == "Serviço" else 0
+        
         try:
             custo = float(self.ent_custo.get().replace(",", "."))
             preco = float(self.ent_preco.get().replace(",", "."))
+            atacado = float(self.ent_atacado.get().replace(",", "."))
         except ValueError:
             messagebox.showerror("Erro", "Valores numéricos inválidos.")
             return
@@ -150,16 +191,16 @@ class ProductModal(ctk.CTkToplevel):
         
         try:
             if self.product_id:
-                cur.execute("UPDATE products SET nome=?, sku=?, codigo_barras=?, custo=?, preco_venda=? WHERE id=?",
-                            (nome, sku, ean, custo, preco, self.product_id))
+                cur.execute("UPDATE products SET nome=?, sku=?, codigo_barras=?, custo=?, preco_venda=?, cfop_padrao=?, preco_atacado=?, is_servico=? WHERE id=?",
+                            (nome, sku, ean, custo, preco, cfop, atacado, is_servico, self.product_id))
             else:
                 try:
                     from erp_backend.core.normalizer import normalize
                     nome_norm = normalize(nome)
                 except ImportError:
                     nome_norm = nome.upper()
-                cur.execute("INSERT INTO products (nome, nome_normalizado, sku, codigo_barras, custo, preco_venda, estoque_atual) VALUES (?, ?, ?, ?, ?, ?, 0)",
-                            (nome, nome_norm, sku, ean, custo, preco))
+                cur.execute("INSERT INTO products (nome, nome_normalizado, sku, codigo_barras, custo, preco_venda, estoque_atual, cfop_padrao, preco_atacado, is_servico) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?)",
+                            (nome, nome_norm, sku, ean, custo, preco, cfop, atacado, is_servico))
             conn.commit()
             if self.on_save:
                 self.on_save()

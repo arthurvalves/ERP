@@ -97,9 +97,9 @@ def process_nfe_xml(xml_content: str):
                 nome_norm = normalize_string(nome)
                 
                 cur.execute("""
-                    INSERT INTO products (sku, nome, nome_normalizado, codigo_barras, ncm, referencia, fornecedor_id, custo, estoque_atual)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-                """, (sku, nome, nome_norm, ean, item['NCM'], item['cProd'], supplier_id, item['vUnCom']))
+                    INSERT INTO products (sku, nome, nome_normalizado, codigo_barras, ncm, referencia, fornecedor_id, custo, estoque_atual, cfop_padrao)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+                """, (sku, nome, nome_norm, ean, item['NCM'], item['cProd'], supplier_id, item['vUnCom'], item.get('CFOP', '')))
                 product_id = cur.lastrowid
                 old_stock = 0
                 old_cost = 0.0
