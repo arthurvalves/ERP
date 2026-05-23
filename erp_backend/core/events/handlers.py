@@ -37,9 +37,9 @@ def _handle_nfe_imported(payload: dict):
 
         for it in items:
             sku = (it.get('cProd') or it.get('xProd'))[:40]
+            prod = get_by_sku(sku)
             # try barcode match first
-            prod = None
-            if it.get('codigo_barras'):
+            if not prod and it.get('codigo_barras'):
                 prod = match_product_by_barcode(it.get('codigo_barras'))
             if not prod:
                 prod = fuzzy_match_by_name(it.get('xProd'))

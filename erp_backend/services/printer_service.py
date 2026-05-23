@@ -35,6 +35,39 @@ def format_line(left: str, right: str, width: int = 40) -> str:
         spaces = 1
     return f"{left}{' ' * spaces}{right}"
 
+def generate_os_receipt_text(os_id: int, os_data: dict, items: list) -> str:
+    now = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+    
+    lines = []
+    lines.append("MINIERP SISTEMAS LTDA".center(40))
+    lines.append("ORDEM DE SERVICO".center(40))
+    lines.append("-" * 40)
+    lines.append(format_line(f"OS NUM: {os_id:05d}", now))
+    lines.append(format_line(f"PLACA: {os_data.get('placa','')[:10]}", f"STATUS: {os_data.get('status','')[:10]}"))
+    lines.append(f"VEICULO: {os_data.get('veiculo','')[:30]}")
+    lines.append("-" * 40)
+    lines.append("ITENS E SERVICOS:")
+    
+    for item in items:
+        qtd = float(item['quantidade'])
+        vu = float(item['preco_unitario'])
+        subt = (qtd * vu) - float(item.get('desconto_item', 0.0))
+        nome = str(item.get('nome', ''))[:30].upper()
+        
+        lines.append(f"{qtd:.2f}x {nome}")
+        lines.append(format_line(f"  UNIT: {vu:.2f}", f"SUBT: {subt:.2f}"))
+        
+    lines.append("-" * 40)
+    lines.append(format_line("TOTAL PECAS:", f"{os_data.get('total_pecas',0):.2f}"))
+    lines.append(format_line("TOTAL M.O.:", f"{os_data.get('total_servicos',0):.2f}"))
+    lines.append(format_line("TOTAL GERAL:", f"{os_data.get('total_geral',0):.2f}"))
+    lines.append("=" * 40)
+    lines.append("ASSINATURA DO CLIENTE".center(40))
+    lines.append("")
+    lines.append("_________________________________".center(40))
+    lines.append("=" * 40)
+    return "\n".join(lines)
+
 def generate_receipt_text(sale_id: int, cart: list, total: float, payment_method: str, desconto_total: float = 0.0) -> str:
     now = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
     

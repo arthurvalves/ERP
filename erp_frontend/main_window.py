@@ -4,6 +4,7 @@ from erp_frontend.pdv_view import PDVView
 from erp_frontend.nfe_view import NFeView
 from erp_frontend.products_view import ProductsView
 from erp_frontend.printer_view import PrinterView
+from erp_frontend.os_view import OSView
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -31,6 +32,9 @@ class MainWindow(ctk.CTk):
         
         self.btn_prod = ctk.CTkButton(self.nav_frame, text="[PRODUTOS]", command=lambda: self.show_view(ProductsView), width=100)
         self.btn_prod.pack(side="left", padx=10)
+        
+        self.btn_os = ctk.CTkButton(self.nav_frame, text="[ORDEM DE SERVIÇO]", command=lambda: self.show_view(OSView), width=150)
+        self.btn_os.pack(side="left", padx=10)
         
         self.btn_print = ctk.CTkButton(self.nav_frame, text="[IMPRESSORAS]", command=lambda: self.show_view(PrinterView), width=100)
         self.btn_print.pack(side="left", padx=10)

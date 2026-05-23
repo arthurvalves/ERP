@@ -13,6 +13,38 @@ def create_product(product: Product, conn=None) -> int:
     """
     nome_normalizado = product.nome_normalizado or normalize(product.nome)
     params = (product.sku, product.nome, nome_normalizado, product.codigo_barras, product.ncm, product.referencia, product.fornecedor_id, product.categoria_id, product.custo, product.margem_padrao, product.preco_venda, product.estoque_atual)
+    existing = fetchone("SELECT id FROM products WHERE sku = ?", (product.sku,))
+    if existing:
+        pid = existing["id"]
+        update_sql = """
+        UPDATE products
+           SET nome = ?, nome_normalizado = ?, codigo_barras = COALESCE(codigo_barras, ?),
+               ncm = COALESCE(ncm, ?), referencia = COALESCE(referencia, ?),
+               fornecedor_id = COALESCE(fornecedor_id, ?), categoria_id = COALESCE(categoria_id, ?),
+               custo = CASE WHEN custo = 0 OR custo IS NULL THEN ? ELSE custo END,
+               margem_padrao = COALESCE(margem_padrao, ?),
+               preco_venda = CASE WHEN preco_venda = 0 OR preco_venda IS NULL THEN ? ELSE preco_venda END
+         WHERE id = ?
+        """
+        update_params = (
+            product.nome,
+            nome_normalizado,
+            product.codigo_barras,
+            product.ncm,
+            product.referencia,
+            product.fornecedor_id,
+            product.categoria_id,
+            product.custo,
+            product.margem_padrao,
+            product.preco_venda,
+            pid,
+        )
+        if conn is not None:
+            execute_with_conn(conn, update_sql, update_params)
+        else:
+            execute(update_sql, update_params)
+        log('product', pid, 'UPSERT', {'sku': product.sku, 'nome': product.nome}, conn=conn)
+        return pid
     if conn is not None:
         pid = execute_with_conn(conn, sql, params)
     else:
@@ -28,7 +60,7 @@ def get_by_sku(sku: str) -> Optional[Product]:
     row = fetchone("SELECT * FROM products WHERE sku = ?", (sku,))
     if not row:
         return None
-    return Product(**row)
+    return Product.from_row(row)
 
 def update_stock(product_id: int, delta: float):
     # Direct stock edits are not allowed. Stock is derived from stock_movements.
@@ -38,4 +70,4 @@ def search_by_barcode(barcode: str) -> Optional[Product]:
     row = fetchone("SELECT * FROM products WHERE codigo_barras = ?", (barcode,))
     if not row:
         return None
-    return Product(**row)
+    return Product.from_row(row)

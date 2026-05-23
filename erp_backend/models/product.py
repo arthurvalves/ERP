@@ -16,3 +16,10 @@ class Product:
     margem_padrao: float = 0.0
     preco_venda: float = 0.0
     estoque_atual: float = 0.0
+
+    @classmethod
+    def from_row(cls, row):
+        data = dict(row)
+        allowed = set(cls.__dataclass_fields__.keys())
+        filtered = {key: value for key, value in data.items() if key in allowed}
+        return cls(**filtered)

@@ -32,6 +32,6 @@ def fuzzy_match_by_name(name: str, min_score: float = 0.85) -> Optional[Product]
             best_score = score
             best = c
     if best and best_score >= min_score:
-        return Product(**best)
+        return Product.from_row(best)
     return None
 
