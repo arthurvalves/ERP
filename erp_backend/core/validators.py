@@ -2,7 +2,7 @@ from typing import Dict, List
 
 def validate_nfe_structure(root) -> None:
     # minimal structural checks
-    chave = root.findtext('.//chNFe')
+    chave = root.findtext('.//{*}chNFe')
     if not chave:
         raise ValueError('Chave de acesso ausente na NF-e')
 

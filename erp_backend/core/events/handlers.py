@@ -7,6 +7,8 @@ from ...core.normalizer import normalize
 from ...utils.db import transaction
 from ...utils.audit import log
 from ...services.history_service import log_cost_change, log_price_change
+from ...services.pricing_service import calculate_price
+from ...core.events.event_bus import emit
 
 
 def _handle_nfe_imported(payload: dict):
@@ -48,15 +50,32 @@ def _handle_nfe_imported(payload: dict):
                 old_cost = old_cost_row[0] if old_cost_row else None
                 if old_cost is None or old_cost != it.get('vUnCom'):
                     log_cost_change(prod_id, old_cost, it.get('vUnCom'), supplier_id, purchase_id, conn=conn)
+                    # update cost
                     conn.execute('UPDATE products SET custo = ? WHERE id = ?', (it.get('vUnCom'), prod_id))
+                    # recalculate price using existing margem_padrao
+                    row = conn.execute('SELECT margem_padrao, custo, preco_venda FROM products WHERE id = ?', (prod_id,)).fetchone()
+                    margem = row[0] or 0
+                    new_price = calculate_price(it.get('vUnCom') or 0, margem)
+                    old_price = row[2]
+                    if old_price != new_price:
+                        conn.execute('UPDATE products SET preco_venda = ? WHERE id = ?', (new_price, prod_id))
+                        log_price_change(prod_id, old_price, new_price, 'nf-e', conn=conn)
+                        try:
+                            emit('PriceUpdated', {'product_id': prod_id, 'old_price': old_price, 'new_price': new_price})
+                        except Exception:
+                            pass
             else:
                 # create new product
                 nome = it.get('xProd')
                 nome_norm = normalize(nome)
                 from ...models.product import Product
                 p = Product(id=None, sku=sku, nome=nome, nome_normalizado=nome_norm, codigo_barras=None, ncm=it.get('NCM'), referencia=None, fornecedor_id=supplier_id, categoria_id=None, custo=it.get('vUnCom') or 0, margem_padrao=0, preco_venda=it.get('vUnCom') or 0, estoque_atual=0)
-                prod_id = create_product(p)
+                prod_id = create_product(p, conn=conn)
                 log_price_change(prod_id, None, p.preco_venda, 'nf-e', conn=conn)
+                try:
+                    emit('PriceUpdated', {'product_id': prod_id, 'old_price': None, 'new_price': p.preco_venda})
+                except Exception:
+                    pass
 
             add_purchase_item(purchase_id, prod_id, it.get('xProd'), it.get('qCom'), it.get('vUnCom'), it.get('NCM'), conn=conn)
         # recompute stock for affected products
@@ -65,7 +84,7 @@ def _handle_nfe_imported(payload: dict):
             sku = (it.get('cProd') or it.get('xProd'))[:40]
             row = conn.execute('SELECT id FROM products WHERE sku = ?', (sku,)).fetchone()
             if row:
-                recompute_stock(row[0])
+                recompute_stock(row[0], conn=conn)
 
         log('nfe_event_handler', purchase_id, 'PROCESS', {'chave': chave}, origem='NFeImported', conn=conn)
 

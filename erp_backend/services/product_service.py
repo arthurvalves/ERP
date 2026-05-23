@@ -1,20 +1,23 @@
 from ..models.product import Product
-from ..utils.db import fetchone, fetchall, execute
+from ..utils.db import fetchone, fetchall, execute, execute_with_conn
 from typing import Optional, List
 from ..core.normalizer import normalize
 from ..utils.audit import log
 from ..core.events.event_bus import emit
 
 
-def create_product(product: Product) -> int:
+def create_product(product: Product, conn=None) -> int:
     sql = """
     INSERT INTO products (sku,nome,nome_normalizado,codigo_barras,ncm,referencia,fornecedor_id,categoria_id,custo,margem_padrao,preco_venda,estoque_atual)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
     """
     nome_normalizado = product.nome_normalizado or normalize(product.nome)
     params = (product.sku, product.nome, nome_normalizado, product.codigo_barras, product.ncm, product.referencia, product.fornecedor_id, product.categoria_id, product.custo, product.margem_padrao, product.preco_venda, product.estoque_atual)
-    pid = execute(sql, params)
-    log('product', pid, 'CREATE', {'sku': product.sku, 'nome': product.nome})
+    if conn is not None:
+        pid = execute_with_conn(conn, sql, params)
+    else:
+        pid = execute(sql, params)
+    log('product', pid, 'CREATE', {'sku': product.sku, 'nome': product.nome}, conn=conn)
     try:
         emit('ProductCreated', {'product_id': pid, 'sku': product.sku})
     except Exception:

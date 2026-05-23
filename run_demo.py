@@ -3,6 +3,8 @@ from erp_backend.database.init_db import init_db
 from erp_backend.core.nfe_processor import process_nfe_xml
 from erp_backend.utils.db import get_connection, fetchone
 from erp_backend.services.sales_service import process_sale_transaction
+# import handlers to register event subscriptions
+import erp_backend.core.events.handlers
 
 SAMPLE_NFE = '''<?xml version="1.0" encoding="UTF-8"?>
 <NFe>

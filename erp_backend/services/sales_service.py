@@ -27,12 +27,13 @@ def add_sale_item(sale_id: int, product_id: int, quantidade: float, preco_unitar
     log('sale_item', item_id, 'CREATE', {'sale_id': sale_id, 'product_id': product_id, 'q': quantidade}, conn=conn)
     return item_id
 
-def process_sale_transaction(customer_id: int, items: list, forma_pagamento: str):
+def process_sale_transaction(customer_id: int, items: list, forma_pagamento: str, desconto_total: float = 0.0):
     from ..core.validators import validate_sale_items
     validate_sale_items(items)
     total = sum((it['quantidade'] * it['preco_unitario'] - it.get('desconto_item', 0)) for it in items)
+    total = max(0.0, total - desconto_total)
     with transaction() as conn:
-        sale_id = create_sale(customer_id, total, 0.0, forma_pagamento, conn=conn)
+        sale_id = create_sale(customer_id, total, desconto_total, forma_pagamento, conn=conn)
         for it in items:
             add_sale_item(sale_id, it['product_id'], it['quantidade'], it['preco_unitario'], it.get('desconto_item', 0.0), conn=conn)
     return sale_id
