@@ -19,33 +19,6 @@ class ProductModal(ctk.CTkToplevel):
         self.setup_ui()
         self.load_data()
         self.bind("<Escape>", lambda e: self.destroy())
-        
-        self.limit = 50
-        self.offset = 0
-
-        # 2. No final da função setup_ui(), adicione os botões de páginação abaixo da tabela:
-        frame_paginacao = ctk.CTkFrame(self, fg_color="transparent")
-        frame_paginacao.pack(pady=5)
-        
-        self.btn_prev = ctk.CTkButton(frame_paginacao, text="<< Anterior", width=100, command=self.pagina_anterior)
-        self.btn_prev.pack(side="left", padx=10)
-        
-        self.lbl_pagina = ctk.CTkLabel(frame_paginacao, text="Página 1", font=("Roboto", 14, "bold"))
-        self.lbl_pagina.pack(side="left", padx=10)
-        
-        self.btn_next = ctk.CTkButton(frame_paginacao, text="Próxima >>", width=100, command=self.proxima_pagina)
-        self.btn_next.pack(side="left", padx=10)
-    
-    def pagina_anterior(self):
-        if self.offset >= self.limit:
-            self.offset -= self.limit
-            self.load_data()
-
-    def proxima_pagina(self):
-        # Só avança se a tabela estiver cheia (indicando que há mais itens)
-        if len(self.table.get_children()) == self.limit:
-            self.offset += self.limit
-            self.load_data()
     
     def get_categorias(self):
         conn = get_connection()
@@ -139,6 +112,9 @@ class ProductModal(ctk.CTkToplevel):
 
         f_max_stock = ctk.CTkFrame(row3, fg_color="transparent")
         f_max_stock.pack(side="left", fill="x", expand=True, padx=(5, 0))
+        ctk.CTkLabel(f_max_stock, text="Estoque Máximo:", font=("Roboto", 12)).pack(anchor="w")
+        self.ent_max_stock = ctk.CTkEntry(f_max_stock, font=("Roboto", 14))
+        self.ent_max_stock.pack(fill="x")
         
         footer = ctk.CTkFrame(self.frame, fg_color="transparent")
         footer.pack(fill="x", side="bottom", pady=20)
@@ -206,17 +182,6 @@ class ProductModal(ctk.CTkToplevel):
             self.ent_custo.insert(0, f"{custo:.2f}")
             self.ent_preco.insert(0, f"{preco:.2f}")
             self.on_price_change()
-            
-        if query and query != getattr(self, 'last_query', ''):
-            self.offset = 0
-        self.last_query = query
-
-        sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
-        params = params + (self.limit, self.offset)
-        
-        pagina_atual = (self.offset // self.limit) + 1
-        self.lbl_pagina.configure(text=f"Página {pagina_atual}")
-        self.btn_prev.configure(state="normal" if self.offset > 0 else "disabled")
         
     def _update_margin_color(self, margem: float):
         if margem < 0:

@@ -15,29 +15,42 @@ def get_connection(db_path: str = None):
     conn.execute('PRAGMA synchronous=NORMAL;')
     return conn
 
-def fetchone(query: str, params: Tuple = ()): 
-    conn = get_connection()
+def fetchone(query: str, params: Tuple = (), conn: Optional[sqlite3.Connection] = None):
+    close_conn = False
+    if conn is None:
+        conn = get_connection()
+        close_conn = True
     cur = conn.cursor()
     cur.execute(query, params)
     row = cur.fetchone()
-    conn.close()
+    if close_conn:
+        conn.close()
     return row
 
-def fetchall(query: str, params: Tuple = ()): 
-    conn = get_connection()
+def fetchall(query: str, params: Tuple = (), conn: Optional[sqlite3.Connection] = None):
+    close_conn = False
+    if conn is None:
+        conn = get_connection()
+        close_conn = True
     cur = conn.cursor()
     cur.execute(query, params)
     rows = cur.fetchall()
-    conn.close()
+    if close_conn:
+        conn.close()
     return rows
 
-def execute(query: str, params: Tuple = ()): 
-    conn = get_connection()
+def execute(query: str, params: Tuple = (), conn: Optional[sqlite3.Connection] = None):
+    close_conn = False
+    if conn is None:
+        conn = get_connection()
+        close_conn = True
     cur = conn.cursor()
     cur.execute(query, params)
-    conn.commit()
+    if close_conn:
+        conn.commit()
     lastrowid = cur.lastrowid
-    conn.close()
+    if close_conn:
+        conn.close()
     return lastrowid
 
 def execute_with_conn(conn, query: str, params: Tuple = ()): 
@@ -56,4 +69,3 @@ def transaction(db_path: str = None) -> Generator[sqlite3.Connection, None, None
         raise
     finally:
         conn.close()
-

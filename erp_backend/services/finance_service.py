@@ -65,7 +65,7 @@ def get_installment_details_for_notification(installment_id: int):
 def settle_installment(installment_id: int, payment_method: str):
     """Dá baixa em uma parcela e registra a entrada no caixa, se aplicável."""
     user_id = get_current_user_id()
-    with execute("BEGIN") as conn:
+    with transaction() as conn:
         execute_with_conn(conn, "UPDATE accounts_receivable SET status = 'paid', payment_date = date('now') WHERE id = ?", (installment_id,))
         
         open_session = get_open_session()

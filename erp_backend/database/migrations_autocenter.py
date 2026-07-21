@@ -14,6 +14,7 @@ def run_autocenter_migrations():
         ("preco_atacado", "REAL DEFAULT 0.0"),
         ("estoque_minimo", "REAL DEFAULT 0.0"),
         ("estoque_maximo", "REAL DEFAULT 0.0"),
+        ("is_servico", "INTEGER DEFAULT 0"),
     ]
     
     for col, tipo in colunas_produtos:
@@ -141,6 +142,11 @@ def run_autocenter_migrations():
     # Adiciona a coluna current_km na tabela de veículos, se não existir
     try:
         cur.execute("ALTER TABLE vehicles ADD COLUMN current_km INTEGER")
+    except sqlite3.OperationalError:
+        pass # Coluna já existe
+    try:
+        cur.execute("ALTER TABLE vehicles ADD COLUMN color TEXT")
+        cur.execute("ALTER TABLE vehicles ADD COLUMN vin TEXT")
     except sqlite3.OperationalError:
         pass # Coluna já existe
 
