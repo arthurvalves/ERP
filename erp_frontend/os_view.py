@@ -153,6 +153,14 @@ class OSModal(ctk.CTkToplevel):
         self.cb_pagamento = ctk.CTkOptionMenu(f_actions, values=["DINHEIRO", "PIX", "CARTÃO CRÉDITO", "CARTÃO DÉBITO", "CREDIARIO", "MISTO"], width=140, command=self.toggle_installments_entry)
         self.cb_pagamento.pack(side="left", padx=5)
 
+        # Frame para o campo de parcelas, inicialmente oculto
+        self.f_installments = ctk.CTkFrame(f_actions, fg_color="transparent")
+        # Este frame será exibido ou ocultado pela função toggle_installments_entry
+        ctk.CTkLabel(self.f_installments, text="Parcelas:", font=("Roboto", 12)).pack(side="left", padx=5)
+        self.ent_installments = ctk.CTkEntry(self.f_installments, width=60, font=("Roboto", 14))
+        self.ent_installments.insert(0, "1")
+        self.ent_installments.pack(side="left")
+
         btn_faturar = ctk.CTkButton(f_actions, text="FATURAR E COBRAR", font=("Roboto", 16, "bold"), height=45, fg_color="#2ecc71", hover_color="#27ae60", command=self.faturar)
         btn_faturar.pack(side="right", padx=5)
 
@@ -271,6 +279,7 @@ class OSModal(ctk.CTkToplevel):
         """Mostra ou oculta o campo de parcelas com base na forma de pagamento."""
         if selected_payment == "CREDIARIO":
             self.f_installments.pack(side="left", padx=5, before=self.children['!ctkbutton5']) # Garante a ordem correta
+            self.f_installments.pack(side="left", padx=5, before=self.cb_pagamento.master.children['!ctkbutton']) # Garante a ordem correta
         else:
             self.f_installments.pack_forget()
 
