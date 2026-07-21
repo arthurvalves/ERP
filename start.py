@@ -26,8 +26,6 @@ if __name__ == "__main__":
     run_autocenter_migrations()
     auto_login_admin()  # Inicia a sessão do admin automaticamente
     app = MainWindow()
-    try:
-        app.state('zoomed')
-    except Exception:
-        pass
+    # Força a aplicação a iniciar maximizada
+    app.state('zoomed')
     app.mainloop()

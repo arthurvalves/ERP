@@ -42,14 +42,25 @@ class ScheduleView(ctk.CTkFrame):
         # Busca os dados
         scheduled_orders = schedule_service.get_scheduled_orders_for_period(start_of_week, end_of_week)
 
+        days_translation = {
+            "MONDAY": "SEGUNDA-FEIRA",
+            "TUESDAY": "TERÇA-FEIRA",
+            "WEDNESDAY": "QUARTA-FEIRA",
+            "THURSDAY": "QUINTA-FEIRA",
+            "FRIDAY": "SEXTA-FEIRA",
+            "SATURDAY": "SÁBADO",
+            "SUNDAY": "DOMINGO"
+        }
+
         # Cria as colunas dos dias
         days_of_week = [(start_of_week + timedelta(days=i)) for i in range(7)]
         for i, day in enumerate(days_of_week):
             day_frame = ctk.CTkFrame(self.schedule_container, fg_color="#333333", border_width=1, border_color="#444444")
             day_frame.grid(row=0, column=i, sticky="nsew", padx=5, pady=5)
             self.schedule_container.grid_columnconfigure(i, weight=1)
-
-            day_str = day.strftime("%A").upper()
+            
+            day_in_english = day.strftime("%A").upper()
+            day_str = days_translation.get(day_in_english, day_in_english) # Traduz o dia da semana
             date_str = day.strftime("%d/%m")
             ctk.CTkLabel(day_frame, text=f"{day_str}\n{date_str}", font=("Roboto", 14, "bold")).pack(fill="x", pady=5)
 
