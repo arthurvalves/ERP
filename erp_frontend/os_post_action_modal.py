@@ -54,11 +54,17 @@ class OSPostActionModal(ctk.CTkToplevel):
         text_receipt = generate_os_receipt_text(self.os_data.get('id', 0), self.os_data, self.items)
         
         if "PDF" in printer_name:
-            filepath = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF", "*.pdf")], initialfile=f"Cupom_OS_{self.os_data.get('id', 0):05d}.pdf")
-            if filepath:
-                save_receipt_pdf(text_receipt, filepath)
-                try: os.startfile(filepath)
-                except Exception: pass
+            # Salva o PDF automaticamente na pasta do projeto
+            project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+            filename = f"Cupom_OS_{self.os_data.get('id', 0):05d}.pdf"
+            filepath = os.path.join(project_root, filename)
+            
+            save_receipt_pdf(text_receipt, filepath)
+            messagebox.showinfo("PDF Gerado", f"O recibo foi salvo como '{filename}' na pasta do projeto.")
+            try:
+                os.startfile(filepath) # Tenta abrir o PDF automaticamente
+            except Exception:
+                pass
         else:
             print(f"--- ENVIANDO PARA IMPRESSORA {printer_name} ---\n{text_receipt}")
             messagebox.showinfo("Sucesso", f"Enviado para a impressora: {printer_name}")
