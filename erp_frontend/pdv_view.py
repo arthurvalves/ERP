@@ -102,10 +102,12 @@ class PaymentModal(ctk.CTkToplevel):
         self.cart = cart
         self.total = total
         self.on_success = on_success
-        self.payment_methods = ["DINHEIRO", "PIX", "CARTÃO CRÉDITO", "CARTÃO DÉBITO", "MISTO"]
+        self.payment_methods = ["DINHEIRO", "PIX", "CARTÃO CRÉDITO", "CARTÃO DÉBITO", "CREDIARIO", "MISTO"]
         self.current_payment_idx = 0
+        self.customer_id = None # Armazena o cliente selecionado para a venda
         
         self.setup_ui()
+        self.update_customer_label()
         self.bind_shortcuts()
         
     def setup_ui(self):
@@ -117,6 +119,9 @@ class PaymentModal(ctk.CTkToplevel):
         
         f_summary = ctk.CTkFrame(content, fg_color="#2b2b2b")
         f_summary.pack(side="left", fill="both", expand=True, padx=(0, 10))
+        self.lbl_customer = ctk.CTkLabel(f_summary, text="Cliente: CONSUMIDOR FINAL", font=("Roboto", 14))
+        self.lbl_customer.pack(pady=5)
+
         ctk.CTkLabel(f_summary, text="Resumo da Venda", font=("Roboto", 18, "bold")).pack(pady=10)
         
         summary_text = ctk.CTkTextbox(f_summary, font=("Roboto", 16), state="normal")
@@ -150,6 +155,13 @@ class PaymentModal(ctk.CTkToplevel):
         self.lbl_troco = ctk.CTkLabel(self.f_dinheiro, text="Troco: R$ 0.00", font=("Roboto", 28, "bold"), text_color="#f1c40f")
         self.lbl_troco.pack(pady=20)
         
+        # Frame para crediário
+        self.f_crediario = ctk.CTkFrame(f_pay, fg_color="transparent")
+        ctk.CTkLabel(self.f_crediario, text="Número de Parcelas:", font=("Roboto", 16)).pack(anchor="w", padx=20)
+        self.ent_installments = ctk.CTkEntry(self.f_crediario, font=("Roboto", 32, "bold"), height=50)
+        self.ent_installments.pack(fill="x", padx=20, pady=5)
+        self.ent_installments.insert(0, "1")
+
         self.update_pay_form()
         
         f_btn = ctk.CTkFrame(self, fg_color="transparent")
@@ -161,6 +173,11 @@ class PaymentModal(ctk.CTkToplevel):
         btn_cancel = ctk.CTkButton(f_btn, text="[ESC] CANCELAR", font=("Roboto", 20), height=50, fg_color="#e74c3c", hover_color="#c0392b", command=self.destroy)
         btn_cancel.pack(side="right")
         
+    def update_customer_label(self):
+        if self.customer_id:
+            # Aqui poderíamos buscar o nome do cliente, mas para manter simples, apenas mostramos o ID
+            self.lbl_customer.configure(text=f"Cliente ID: {self.customer_id}", text_color="#2ecc71")
+
     def bind_shortcuts(self):
         self.bind("<F4>", lambda e: self.toggle_payment())
         self.bind("<Return>", lambda e: self.confirm())
@@ -172,11 +189,22 @@ class PaymentModal(ctk.CTkToplevel):
         self.update_pay_form()
         
     def update_pay_form(self):
-        if self.payment_methods[self.current_payment_idx] == "DINHEIRO":
+        selected_method = self.payment_methods[self.current_payment_idx]
+        if selected_method == "DINHEIRO":
             self.f_dinheiro.pack(fill="x", pady=10)
+            self.f_crediario.pack_forget()
             self.ent_recebido.focus_set()
+        elif selected_method == "CREDIARIO":
+            self.f_dinheiro.pack_forget()
+            self.f_crediario.pack(fill="x", pady=10)
+            self.ent_installments.focus_set()
+            # Se o cliente ainda não foi selecionado, força a seleção
+            if not self.customer_id:
+                self.select_customer_for_credit()
+
         else:
             self.f_dinheiro.pack_forget()
+            self.f_crediario.pack_forget()
             self.focus_set()
             
     def update_total_with_discount(self, event=None):
@@ -202,14 +230,25 @@ class PaymentModal(ctk.CTkToplevel):
         except ValueError:
             self.lbl_troco.configure(text="Troco: R$ 0.00", text_color="#f1c40f")
             
+    def select_customer_for_credit(self):
+        from erp_frontend.modals.customer_search_modal import CustomerSearchModal
+        messagebox.showinfo("Cliente Necessário", "Para vendas no crediário, é obrigatório selecionar um cliente.")
+        
+        dialog = CustomerSearchModal(self)
+        customer_id = dialog.get_input()
+        if customer_id:
+            self.customer_id = customer_id
+            self.update_customer_label()
+
     def confirm(self):
         try:
             desc_total = float(self.ent_desconto.get().replace(",", "."))
         except ValueError:
             desc_total = 0.0
         final_total = max(0.0, self.total - desc_total)
+        payment_method = self.payment_methods[self.current_payment_idx]
 
-        if self.payment_methods[self.current_payment_idx] == "DINHEIRO":
+        if payment_method == "DINHEIRO":
             try:
                 val = float(self.ent_recebido.get().replace(",", "."))
                 if val < final_total:
@@ -219,13 +258,27 @@ class PaymentModal(ctk.CTkToplevel):
                 messagebox.showwarning("Aviso", "Valor recebido inválido.")
                 return
                 
+
+        installments = 1
+        if payment_method == 'CREDIARIO':
+            try:
+                installments = int(self.ent_installments.get())
+                if installments <= 0: raise ValueError()
+            except ValueError:
+                messagebox.showwarning("Aviso", "Número de parcelas inválido.")
+                return
+            if not self.customer_id:
+                messagebox.showerror("Cliente não Selecionado", "É obrigatório selecionar um cliente para vendas no crediário.")
+                self.select_customer_for_credit() # Tenta de novo
+                return
+
         items = [{'product_id': i['product'].id, 'quantidade': i['quantidade'], 'preco_unitario': i['preco_unitario'], 'desconto_item': i.get('desconto_item', 0.0)} for i in self.cart]
         try:
-            sale_id = process_sale_transaction(customer_id=None, items=items, forma_pagamento=self.payment_methods[self.current_payment_idx], desconto_total=desc_total)
+            sale_id = process_sale_transaction(customer_id=self.customer_id, items=items, forma_pagamento=payment_method, desconto_total=desc_total, installments=installments)
             
             # DISPARO DA IMPRESSÃO DO CUPOM 80MM
             printer_name = get_default_printer()
-            text_receipt = generate_receipt_text(sale_id, self.cart, final_total, self.payment_methods[self.current_payment_idx], desc_total)
+            text_receipt = generate_receipt_text(sale_id, self.cart, final_total, payment_method, desc_total)
             
             if "PDF" in printer_name:
                 from tkinter import filedialog

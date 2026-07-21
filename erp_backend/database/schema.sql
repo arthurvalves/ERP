@@ -132,3 +132,27 @@ CREATE TABLE IF NOT EXISTS product_cost_history (
     FOREIGN KEY(supplier_id) REFERENCES suppliers(id),
     FOREIGN KEY(nf_e_id) REFERENCES purchases(id)
 );
+
+-- Criação da tabela de Veículos
+CREATE TABLE IF NOT EXISTS vehicles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    plate VARCHAR(10) UNIQUE NOT NULL,
+    brand VARCHAR(50),
+    model VARCHAR(50),
+    year INTEGER,
+    customer_id INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE
+);
+
+-- Adicionando a referência na tabela de OS (caso a tabela já exista, use ALTER TABLE)
+-- Se estiver recriando o schema:
+CREATE TABLE IF NOT EXISTS service_orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    vehicle_plate VARCHAR(10) NOT NULL,
+    status VARCHAR(20) DEFAULT 'ABERTA',
+    diagnosis TEXT,
+    total_amount DECIMAL(10, 2) DEFAULT 0.00,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(vehicle_plate) REFERENCES vehicles(plate)
+);

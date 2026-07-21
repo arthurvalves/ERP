@@ -3,8 +3,16 @@ from erp_frontend.dashboard_view import DashboardView
 from erp_frontend.pdv_view import PDVView
 from erp_frontend.nfe_view import NFeView
 from erp_frontend.products_view import ProductsView
+from erp_frontend.services_view import ServicesView
 from erp_frontend.printer_view import PrinterView
 from erp_frontend.os_view import OSView
+from erp_frontend.quotes_view import QuotesView
+from erp_frontend.history_view import HistoryView
+from erp_frontend.accounts_receivable_view import AccountsReceivableView
+from erp_frontend.schedule_view import ScheduleView
+from erp_frontend.maintenance_alerts_view import MaintenanceAlertsView
+from erp_frontend.reports_view import ReportsView
+from erp_frontend.session import get_current_user
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -14,36 +22,56 @@ class MainWindow(ctk.CTk):
         super().__init__()
         self.title("miniERP - Frente de Caixa")
         self.geometry("1024x768")
-        
+        self.current_user = get_current_user()
+        self.current_view = None
+
+        self.setup_main_ui()
+        self.show_view(DashboardView)
+
+    def _create_nav_menu(self, text, options):
+        """Cria um menu suspenso na barra de navegação."""
+        # O truque é que o comando do menu chama a função show_view com a tela correspondente.
+        menu_values = list(options.keys())
+
+        def menu_callback(choice):
+            if choice in options:
+                self.show_view(options[choice])
+
+        # Usamos um CTkButton que se parece com o menu, e um CTkOptionMenu sem texto visível ao lado.
+        menu = ctk.CTkOptionMenu(
+            self.nav_frame,
+            values=menu_values,
+            command=menu_callback,
+            font=("Roboto", 14),
+            width=140,
+            height=35,
+            dropdown_font=("Roboto", 14),
+            fg_color="#343638",
+            button_color="#343638",
+            button_hover_color="#3f4143"
+        )
+        menu.set(text) # Define o texto inicial do botão
+        menu.pack(side="left", padx=5, pady=10)
+
+    def setup_main_ui(self):
         self.nav_frame = ctk.CTkFrame(self, height=60, corner_radius=0)
         self.nav_frame.pack(side="top", fill="x")
         
         self.logo = ctk.CTkLabel(self.nav_frame, text="ERP", font=("Roboto", 24, "bold"), text_color="#2ecc71")
         self.logo.pack(side="left", padx=20)
-        
-        self.btn_dash = ctk.CTkButton(self.nav_frame, text="[DASHBOARD]", command=lambda: self.show_view(DashboardView), width=100)
-        self.btn_dash.pack(side="left", padx=10)
-        
-        self.btn_pdv = ctk.CTkButton(self.nav_frame, text="[PDV]", command=lambda: self.show_view(PDVView), width=100)
-        self.btn_pdv.pack(side="left", padx=10)
-        
-        self.btn_nfe = ctk.CTkButton(self.nav_frame, text="[NF-e]", command=lambda: self.show_view(NFeView), width=100)
-        self.btn_nfe.pack(side="left", padx=10)
-        
-        self.btn_prod = ctk.CTkButton(self.nav_frame, text="[PRODUTOS]", command=lambda: self.show_view(ProductsView), width=100)
-        self.btn_prod.pack(side="left", padx=10)
-        
-        self.btn_os = ctk.CTkButton(self.nav_frame, text="[ORDEM DE SERVIÇO]", command=lambda: self.show_view(OSView), width=150)
-        self.btn_os.pack(side="left", padx=10)
-        
-        self.btn_print = ctk.CTkButton(self.nav_frame, text="[IMPRESSORAS]", command=lambda: self.show_view(PrinterView), width=100)
-        self.btn_print.pack(side="left", padx=10)
+
+        # Botão principal do Dashboard
+        ctk.CTkButton(self.nav_frame, text="[DASHBOARD]", command=lambda: self.show_view(DashboardView)).pack(side="left", padx=5)
+
+        # Menus Suspensos
+        self._create_nav_menu("Cadastros", {"Produtos": ProductsView, "Serviços": ServicesView})
+        self._create_nav_menu("Operacional", {"PDV": PDVView, "Orçamentos": QuotesView, "Ordens de Serviço": OSView, "Agenda": ScheduleView})
+        self._create_nav_menu("Análise", {"Histórico de Veículos": HistoryView, "Alertas de Manutenção": MaintenanceAlertsView, "Relatórios": ReportsView})
+        self._create_nav_menu("Financeiro", {"Contas a Receber": AccountsReceivableView})
+        self._create_nav_menu("Administrativo", {"Importar NF-e": NFeView, "Impressoras": PrinterView})
         
         self.content_frame = ctk.CTkFrame(self, corner_radius=0, fg_color="#1e1e1e")
         self.content_frame.pack(side="top", fill="both", expand=True)
-        
-        self.current_view = None
-        self.show_view(DashboardView)
         
     def show_view(self, view_class):
         if self.current_view:

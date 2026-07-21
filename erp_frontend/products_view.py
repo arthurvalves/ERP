@@ -6,7 +6,7 @@ from erp_backend.utils.db import get_connection
 class ProductModal(ctk.CTkToplevel):
     def __init__(self, master, product_id=None, initial_data=None, on_save=None):
         super().__init__(master)
-        self.title("Editar Produto" if product_id else "Novo Produto")
+        self.title("Editar Produto" if product_id else "Novo Produto") # Corrigido
         self.geometry("500x550")
         self.transient(master)
         self.grab_set()
@@ -126,6 +126,19 @@ class ProductModal(ctk.CTkToplevel):
         self.ent_margem = ctk.CTkEntry(f_preco_container, font=("Roboto", 14, "bold"))
         self.ent_margem.pack(fill="x")
         self.ent_margem.bind("<KeyRelease>", self.on_margin_change)
+
+        # Novos campos de estoque
+        row3 = ctk.CTkFrame(self.frame, fg_color="transparent")
+        row3.pack(fill="x", pady=15)
+
+        f_min_stock = ctk.CTkFrame(row3, fg_color="transparent")
+        f_min_stock.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        ctk.CTkLabel(f_min_stock, text="Estoque Mínimo:", font=("Roboto", 12)).pack(anchor="w")
+        self.ent_min_stock = ctk.CTkEntry(f_min_stock, font=("Roboto", 14))
+        self.ent_min_stock.pack(fill="x")
+
+        f_max_stock = ctk.CTkFrame(row3, fg_color="transparent")
+        f_max_stock.pack(side="left", fill="x", expand=True, padx=(5, 0))
         
         footer = ctk.CTkFrame(self.frame, fg_color="transparent")
         footer.pack(fill="x", side="bottom", pady=20)
@@ -161,6 +174,8 @@ class ProductModal(ctk.CTkToplevel):
             self.ent_ean.insert(0, self.initial_data.get('codigo_barras', ''))
             self.ent_cfop.insert(0, self.initial_data.get('cfop_padrao', ''))
             self.ent_atacado.insert(0, f"{self.initial_data.get('preco_atacado', 0.0):.2f}")
+            self.ent_min_stock.insert(0, f"{self.initial_data.get('estoque_minimo', 0.0):.2f}")
+            self.ent_max_stock.insert(0, f"{self.initial_data.get('estoque_maximo', 0.0):.2f}")
             self.cb_tipo.set("Serviço" if self.initial_data.get('is_servico') else "Produto")
             
             custo = self.initial_data.get('custo', 0.0)
@@ -172,7 +187,7 @@ class ProductModal(ctk.CTkToplevel):
             
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute("SELECT nome, sku, codigo_barras, custo, preco_venda, cfop_padrao, preco_atacado, is_servico FROM products WHERE id = ?", (self.product_id,))
+        cur.execute("SELECT * FROM products WHERE id = ?", (self.product_id,))
         row = cur.fetchone()
         conn.close()
         
@@ -181,6 +196,8 @@ class ProductModal(ctk.CTkToplevel):
             self.ent_sku.insert(0, row['sku'] or "")
             self.ent_ean.insert(0, row['codigo_barras'] or "")
             self.ent_cfop.insert(0, row['cfop_padrao'] or "")
+            self.ent_min_stock.insert(0, f"{row['estoque_minimo'] or 0.0:.2f}")
+            self.ent_max_stock.insert(0, f"{row['estoque_maximo'] or 0.0:.2f}")
             self.ent_atacado.insert(0, f"{row['preco_atacado'] or 0.0:.2f}")
             self.cb_tipo.set("Serviço" if row['is_servico'] else "Produto")
             
@@ -252,6 +269,8 @@ class ProductModal(ctk.CTkToplevel):
             custo = float(self.ent_custo.get().replace(",", "."))
             preco = float(self.ent_preco.get().replace(",", "."))
             atacado = float(self.ent_atacado.get().replace(",", "."))
+            min_stock = float(self.ent_min_stock.get().replace(",", "."))
+            max_stock = float(self.ent_max_stock.get().replace(",", "."))
         except ValueError:
             messagebox.showerror("Erro", "Valores numéricos inválidos.")
             return
@@ -265,16 +284,16 @@ class ProductModal(ctk.CTkToplevel):
         
         try:
             if self.product_id:
-                cur.execute("UPDATE products SET nome=?, sku=?, codigo_barras=?, custo=?, preco_venda=?, cfop_padrao=?, preco_atacado=?, is_servico=? WHERE id=?",
-                            (nome, sku, ean, custo, preco, cfop, atacado, is_servico, self.product_id))
+                cur.execute("UPDATE products SET nome=?, sku=?, codigo_barras=?, custo=?, preco_venda=?, cfop_padrao=?, preco_atacado=?, is_servico=?, estoque_minimo=?, estoque_maximo=? WHERE id=?",
+                            (nome, sku, ean, custo, preco, cfop, atacado, is_servico, min_stock, max_stock, self.product_id))
             else:
                 try:
                     from erp_backend.core.normalizer import normalize
                     nome_norm = normalize(nome)
                 except ImportError:
                     nome_norm = nome.upper()
-                cur.execute("INSERT INTO products (nome, nome_normalizado, sku, codigo_barras, custo, preco_venda, estoque_atual, cfop_padrao, preco_atacado, is_servico) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?)",
-                            (nome, nome_norm, sku, ean, custo, preco, cfop, atacado, is_servico))
+                cur.execute("INSERT INTO products (nome, nome_normalizado, sku, codigo_barras, custo, preco_venda, estoque_atual, cfop_padrao, preco_atacado, is_servico, estoque_minimo, estoque_maximo) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)",
+                            (nome, nome_norm, sku, ean, custo, preco, cfop, atacado, is_servico, min_stock, max_stock))
             conn.commit()
             if self.on_save:
                 self.on_save()

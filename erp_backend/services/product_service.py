@@ -71,3 +71,15 @@ def search_by_barcode(barcode: str) -> Optional[Product]:
     if not row:
         return None
     return Product.from_row(row)
+
+def get_purchase_suggestions() -> List[dict]:
+    """
+    Retorna uma lista de produtos cujo estoque atual está abaixo do estoque mínimo.
+    """
+    sql = """
+        SELECT id, nome, sku, estoque_atual, estoque_minimo, fornecedor_id
+        FROM products
+        WHERE estoque_minimo > 0 AND estoque_atual <= estoque_minimo
+        ORDER BY nome;
+    """
+    return fetchall(sql)

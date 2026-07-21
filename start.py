@@ -7,12 +7,24 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from erp_backend.database.init_db import init_db
 import erp_backend.core.events.handlers  # noqa: F401 - registra listeners por efeito colateral
 from erp_backend.database.migrations_autocenter import run_autocenter_migrations
+from erp_frontend.session import set_current_user
+from erp_backend.utils.db import fetchone
 
 from erp_frontend.main_window import MainWindow
+
+def auto_login_admin():
+    """Busca o usuário 'admin' e o define na sessão global."""
+    admin_user = fetchone("SELECT * FROM users WHERE username = 'admin'")
+    if admin_user:
+        set_current_user(dict(admin_user))
+    else:
+        # Isso não deve acontecer se as migrações rodaram corretamente
+        print("AVISO: Usuário 'admin' padrão não encontrado. Algumas funções podem falhar.")
 
 if __name__ == "__main__":
     init_db()
     run_autocenter_migrations()
+    auto_login_admin()  # Inicia a sessão do admin automaticamente
     app = MainWindow()
     try:
         app.state('zoomed')

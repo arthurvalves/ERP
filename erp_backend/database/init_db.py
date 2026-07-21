@@ -26,6 +26,10 @@ def init_db(db_path: str = None):
         cur.execute("ALTER TABLE audit_log ADD COLUMN after_payload TEXT")
     except Exception:
         pass
+    try:
+        cur.execute("ALTER TABLE audit_log ADD COLUMN user_id INTEGER")
+    except Exception:
+        pass
     # ensure history tables exist (safe due to IF NOT EXISTS in schema)
     # commit migrations
     conn.commit()
