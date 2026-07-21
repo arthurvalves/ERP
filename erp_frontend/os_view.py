@@ -44,6 +44,17 @@ class OSModal(ctk.CTkToplevel):
         self.ent_placa.pack(fill="x")
         self.ent_placa.bind("<Return>", self.search_vehicle_by_plate)
 
+        # Labels para exibir informações do cliente e veículo
+        self.lbl_vehicle_info = ctk.CTkLabel(f_header, text="Veículo: --", font=("Roboto", 14), anchor="w")
+        self.lbl_vehicle_info.pack(side="left", expand=True, fill="x", padx=10)
+
+        self.lbl_customer_info = ctk.CTkLabel(f_header, text="Cliente: --", font=("Roboto", 14), anchor="w")
+        self.lbl_customer_info.pack(side="left", expand=True, fill="x", padx=10)
+
+        # Botão para editar/adicionar veículo
+        self.btn_edit_vehicle = ctk.CTkButton(f_header, text="EDITAR VEÍCULO", font=("Roboto", 12), command=self.edit_vehicle, state="disabled")
+        self.btn_edit_vehicle.pack(side="left", padx=10)
+
 
         # --- KM ATUAL ---
         f_km = ctk.CTkFrame(f_header, fg_color="transparent")
@@ -172,7 +183,7 @@ class OSModal(ctk.CTkToplevel):
                 if vehicle:
                     self.ent_placa.insert(0, vehicle.plate)
                     self.ent_km.insert(0, str(vehicle.current_km or ''))
-                    self.btn_edit_vehicle.configure(state="normal")
+                    self.update_vehicle_and_customer_info(vehicle, conn=conn)
             
             # Carrega a data e hora do agendamento, se houver
             if os_data.get('scheduled_start_time'):
@@ -210,7 +221,7 @@ class OSModal(ctk.CTkToplevel):
 
         vehicle = vehicle_service.get_vehicle_by_plate(plate)
         if vehicle:
-            self.btn_edit_vehicle.configure(state="normal")
+            self.update_vehicle_and_customer_info(vehicle)
         else:
             if messagebox.askyesno("Veículo não encontrado", f"A placa '{plate}' não está registada.\nDeseja adicionar um novo veículo?"):
                 self.edit_vehicle(plate_suggestion=plate)
@@ -219,6 +230,15 @@ class OSModal(ctk.CTkToplevel):
         self.vehicle_id = vehicle.id
         self.customer_id = vehicle.customer_id
         self.lbl_vehicle_info.configure(text=f"Veículo: {vehicle.brand or ''} {vehicle.model or ''} ({vehicle.year or ''})")
+        self.ent_km.delete(0, 'end')
+        self.ent_km.insert(0, str(vehicle.current_km or ''))
+        
+        customer = customer_service.get_customer_by_id(self.customer_id, conn=conn)
+        if customer:
+            self.lbl_customer_info.configure(text=f"Cliente: {customer.nome_razao_social}")
+        else:
+            self.lbl_customer_info.configure(text="Cliente não encontrado!", text_color="red")
+        self.btn_edit_vehicle.configure(state="normal")
 
     def edit_vehicle(self, plate_suggestion=None):
         # Se não há cliente, força a seleção de um primeiro
@@ -241,8 +261,6 @@ class OSModal(ctk.CTkToplevel):
             if vehicle:
                 self.ent_placa.delete(0, 'end')
                 self.ent_placa.insert(0, vehicle.plate)
-                self.update_vehicle_and_customer_info(vehicle)
-                self.btn_edit_vehicle.configure(state="normal")
 
     def get_customer_id(self):
         """Abre um modal para buscar e retornar o ID de um cliente."""
@@ -283,15 +301,17 @@ class OSModal(ctk.CTkToplevel):
             messagebox.showwarning("Não Encontrado", f"Peça/Serviço '{code}' não localizado no sistema.")
             return
 
-        # self.items.append({
-        #     'product_id': row['id'],
-        #     'tipo': 'servico' if 'servico' in row['nome'].lower() else 'peca', # Heurística temporária
-        #     'nome': row['nome'],
-        #     'codigo': row['sku'] or row['codigo_barras'],
-        #     'quantidade': qtd,
-        #     'preco_unitario': row['preco_venda'] or 0.0,
-        #     'desconto_item': 0.0
-        # })
+        self.items.append({
+            'product_id': row['id'],
+            'tipo': 'servico' if row['is_servico'] else 'peca',
+            'nome': row['nome'],
+            'codigo': row['sku'] or row['codigo_barras'],
+            'quantidade': qtd,
+            'preco_unitario': row['preco_venda'] or 0.0,
+            'desconto_item': 0.0,
+            'technician_id': technician_id,
+            'technician_name': technician_name
+        })
         
         self.ent_code.delete(0, 'end')
         self.ent_qtd.delete(0, 'end')
@@ -366,12 +386,12 @@ class OSModal(ctk.CTkToplevel):
                 if current_km.isdigit():
                     cur.execute("UPDATE vehicles SET current_km = ? WHERE id = ?", (int(current_km), self.vehicle_id))
 
-                cur.execute("UPDATE service_orders SET customer_id=?, vehicle_id=?, descricao_problema=?, status=?, total_pecas=?, total_servicos=?, total_geral=? WHERE id=?",
-                            (self.customer_id, self.vehicle_id, desc, status, t_pecas, t_servicos, t_geral, self.os_id))
+                cur.execute("UPDATE service_orders SET customer_id=?, vehicle_id=?, descricao_problema=?, status=?, total_pecas=?, total_servicos=?, total_geral=?, scheduled_start_time=? WHERE id=?",
+                            (self.customer_id, self.vehicle_id, desc, status, t_pecas, t_servicos, t_geral, schedule_datetime_str, self.os_id))
                 cur.execute("DELETE FROM service_order_items WHERE service_order_id=?", (self.os_id,))
             else:
-                cur.execute("INSERT INTO service_orders (customer_id, vehicle_id, descricao_problema, status, total_pecas, total_servicos, total_geral) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                            (self.customer_id, self.vehicle_id, desc, status, t_pecas, t_servicos, t_geral))
+                cur.execute("INSERT INTO service_orders (customer_id, vehicle_id, descricao_problema, status, total_pecas, total_servicos, total_geral, scheduled_start_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                            (self.customer_id, self.vehicle_id, desc, status, t_pecas, t_servicos, t_geral, schedule_datetime_str))
                 self.os_id = cur.lastrowid
 
             for item in self.items:
