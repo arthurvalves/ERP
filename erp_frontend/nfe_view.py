@@ -252,6 +252,19 @@ class NFeView(ctk.CTkFrame):
                 'cfop_padrao': item_data.get('CFOP', ''),
                 'custo': float(item_data['vUnCom']) }
             ProductModal(self, initial_data=init_data, on_save=self.run_validation)
+        elif item_iid.startswith("revisao_"):
+            parts = item_iid.split("_")
+            xml_item_idx = int(parts[1])
+            matched_prod_id = int(parts[2])
+            
+            if messagebox.askyesno("Confirmar Correspondência",
+                                   f"O item da nota fiscal corresponde ao produto existente ID {matched_prod_id}?\n\n"
+                                   f"Clique em 'Sim' para confirmar ou 'Não' para cadastrá-lo como um novo produto."):
+                # Futuramente, aqui poderia haver uma lógica para associar o item da NF-e ao produto existente.
+                # Por ora, vamos apenas remover o item da revisão para desbloquear a importação.
+                self.table.delete(item_iid)
+                self.simulated_stats['revisao'] -= 1
+                self.run_simulation() # Re-check conditions
 
     def import_nfe(self):
         if self.step < 3 or not self.current_xml_content: return

@@ -229,6 +229,7 @@ class ProductModal(ctk.CTkToplevel):
         ean = self.ent_ean.get().strip()
         cfop = self.ent_cfop.get().strip()
         is_servico = 1 if self.cb_tipo.get() == "Serviço" else 0
+        categoria_nome = self.cb_categoria.get()
         
         try:
             custo = float(self.ent_custo.get().replace(",", "."))
@@ -247,18 +248,25 @@ class ProductModal(ctk.CTkToplevel):
         conn = get_connection()
         cur = conn.cursor()
         
+        # Busca o ID da categoria selecionada
+        categoria_id = None
+        if categoria_nome:
+            cur.execute("SELECT id FROM categories WHERE nome = ?", (categoria_nome,))
+            cat_row = cur.fetchone()
+            if cat_row: categoria_id = cat_row['id']
+
         try:
             if self.product_id:
-                cur.execute("UPDATE products SET nome=?, sku=?, codigo_barras=?, custo=?, preco_venda=?, cfop_padrao=?, preco_atacado=?, is_servico=?, estoque_minimo=?, estoque_maximo=? WHERE id=?",
-                            (nome, sku, ean, custo, preco, cfop, atacado, is_servico, min_stock, max_stock, self.product_id))
+                cur.execute("UPDATE products SET nome=?, sku=?, codigo_barras=?, custo=?, preco_venda=?, cfop_padrao=?, preco_atacado=?, is_servico=?, estoque_minimo=?, estoque_maximo=?, categoria_id=? WHERE id=?",
+                            (nome, sku, ean, custo, preco, cfop, atacado, is_servico, min_stock, max_stock, categoria_id, self.product_id))
             else:
                 try:
                     from erp_backend.core.normalizer import normalize
                     nome_norm = normalize(nome)
                 except ImportError:
                     nome_norm = nome.upper()
-                cur.execute("INSERT INTO products (nome, nome_normalizado, sku, codigo_barras, custo, preco_venda, estoque_atual, cfop_padrao, preco_atacado, is_servico, estoque_minimo, estoque_maximo) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)",
-                            (nome, nome_norm, sku, ean, custo, preco, cfop, atacado, is_servico, min_stock, max_stock))
+                cur.execute("INSERT INTO products (nome, nome_normalizado, sku, codigo_barras, custo, preco_venda, estoque_atual, cfop_padrao, preco_atacado, is_servico, estoque_minimo, estoque_maximo, categoria_id) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)",
+                            (nome, nome_norm, sku, ean, custo, preco, cfop, atacado, is_servico, min_stock, max_stock, categoria_id))
             conn.commit()
             if self.on_save:
                 self.on_save()

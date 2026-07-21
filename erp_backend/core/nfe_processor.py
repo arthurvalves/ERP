@@ -80,6 +80,9 @@ def process_nfe_xml(xml_content: str):
                 sku = f"SKU-{chave[-6:]}-{item['cProd']}"
                 nome = item['xProd']
                 nome_norm = normalize_string(nome)
+                # CORREÇÃO: A variável 'ean' não estava definida neste escopo.
+                ean = item.get('cEAN')
+                if ean and 'SEM GTIN' in ean.upper(): ean = None
                 
                 cur.execute("""
                     INSERT INTO products (sku, nome, nome_normalizado, codigo_barras, ncm, referencia, fornecedor_id, custo, estoque_atual, cfop_padrao)
