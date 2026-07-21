@@ -473,8 +473,23 @@ class OSModal(ctk.CTkToplevel):
                 
             # 3. Se chegou aqui, nada falhou! Atualiza a interface
             self.cb_status.set("Faturada")
-            if self.on_save: self.on_save()
-            messagebox.showinfo("Sucesso", "OS Faturada! O stock das peças foi baixado e a venda registada no caixa.")
+            
+            # 4. Prepara os dados para o modal de pós-ação
+            vehicle = vehicle_service.get_vehicle_by_id(self.vehicle_id, conn=conn)
+            os_data_final = {
+                'id': self.os_id,
+                'placa': vehicle.plate if vehicle else "N/A",
+                'veiculo': f"{vehicle.brand} {vehicle.model}" if vehicle else "N/A",
+                'status': "Faturada",
+                'descricao_problema': self.txt_desc.get("1.0", "end-1c").strip(),
+                'total_pecas': t_pecas,
+                'total_servicos': t_servicos,
+                'total_geral': t_geral
+            }
+
+            # 5. Abre o modal de ações e fecha a OS atual
+            from erp_frontend.os_post_action_modal import OSPostActionModal
+            OSPostActionModal(self.winfo_toplevel(), os_data_final, self.items)
             self.destroy()
             
         except ValueError as ve:
