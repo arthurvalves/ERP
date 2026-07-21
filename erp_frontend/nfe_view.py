@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 from erp_frontend.components.table import TableComponent
 from erp_backend.utils.db import get_connection
 
+from erp_backend.services.matching_service import find_product_match
 # IMPORTAÇÕES DEFINITIVAS - Sem try/except
 from erp_backend.core.nfe_processor import process_nfe_xml
 from erp_backend.core.nfe.nfe_xml_parser import parse_nfe_xml
@@ -159,35 +160,9 @@ class NFeView(ctk.CTkFrame):
         self.simulated_stats = {'items': 0, 'stock': 0, 'new': 0, 'div': 0, 'total_value': 0.0}
 
         for idx, item in enumerate(self.current_parsed_data['items']):
-            ean = item['cEAN'] if item['cEAN'] and 'SEM GTIN' not in item['cEAN'].upper() else None
-            matched = None
-            possivel_match = None  # <-- CORREÇÃO: Inicializar a variável aqui!
-            conf = 0
-            
-            if ean:
-                matched = next((p for p in all_products if p['codigo_barras'] == ean), None)
-                if matched: conf = 100
-                
-            if not matched and supplier_id:
-                matched = next((p for p in all_products if p['ncm'] == item['NCM'] and p['fornecedor_id'] == supplier_id and p['referencia'] == item['cProd']), None)
-                if matched: conf = 100
-                
-            if not matched:
-                item_nome_norm = self._normalize_string(item['xProd'])
-                best_ratio, best_match = 0, None
-                for p in all_products:
-                    if p['nome_normalizado']:
-                        ratio = difflib.SequenceMatcher(None, item_nome_norm, p['nome_normalizado']).ratio()
-                        if ratio > best_ratio:
-                            best_ratio, best_match = ratio, p
-                
-                if best_ratio >= 0.85:
-                    matched = best_match
-                    conf = int(best_ratio * 100)
-                elif best_ratio >= 0.60:
-                    # NOVO COMPORTAMENTO: Entre 60% e 84% vai para REVISÃO
-                    conf = int(best_ratio * 100)
-                    possivel_match = best_match
+            match_result = find_product_match(item, all_products, supplier_id)
+            matched = match_result['product']
+            conf = match_result['confidence']
 
             v_un = float(item['vUnCom'])
             q_com = float(item['qCom'])
@@ -196,8 +171,7 @@ class NFeView(ctk.CTkFrame):
             self.simulated_stats['items'] += 1
             self.simulated_stats['stock'] += q_com
             
-            # Lógica de Tags atualizada
-            if matched:
+            if matched and conf >= 85:
                 status, tag = "OK", "ok"
                 item_iid = f"matched_{matched['id']}"
                 desc = matched['nome']
@@ -211,11 +185,11 @@ class NFeView(ctk.CTkFrame):
                 if pv and pv > 0:
                     margem = f"{((pv - v_un) / pv) * 100:.1f}%"
                     
-            elif conf > 0 and conf < 85 and possivel_match: # <-- CORREÇÃO: Verificar se possivel_match existe!
+            elif matched and conf >= 60:
                 # SE CAIU AQUI, é uma quase correspondência
                 status, tag = "REVISÃO", "revisao"
-                item_iid = f"revisao_{idx}_{possivel_match['id']}"
-                desc = f"⚠️ PARECIDO COM: {possivel_match['nome']} ({conf}%)"
+                item_iid = f"revisao_{idx}_{matched['id']}"
+                desc = f"⚠️ PARECIDO COM: {matched['nome']} ({conf}%)"
                 self.simulated_stats['revisao'] = self.simulated_stats.get('revisao', 0) + 1
                 
             else:

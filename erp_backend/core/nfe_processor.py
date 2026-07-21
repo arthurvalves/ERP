@@ -1,8 +1,9 @@
 import json
-import difflib
 import sqlite3
 from erp_backend.utils.db import get_connection
 from erp_backend.core.nfe.nfe_xml_parser import parse_nfe_xml
+from erp_backend.services.matching_service import find_product_match
+from erp_backend.services.stock_service import record_movement
 from erp_backend.core.events.event_bus import emit
 
 def normalize_string(s: str) -> str:
@@ -71,30 +72,8 @@ def process_nfe_xml(xml_content: str):
         all_products = [dict(row) for row in cur.fetchall()]
 
         for item in nfe_data['items']:
-            matched_product = None
-            ean = item['cEAN'] if item['cEAN'] and 'SEM GTIN' not in item['cEAN'].upper() else None
-
-            # 4.1 Match por EAN
-            if ean:
-                matched_product = next((p for p in all_products if p['codigo_barras'] == ean), None)
-            
-            # 4.2 Match por NCM + Supplier + Referência (Código do Produto)
-            if not matched_product:
-                matched_product = next((p for p in all_products if p['ncm'] == item['NCM'] and p['fornecedor_id'] == supplier_id and p['referencia'] == item['cProd']), None)
-            
-            # 4.3 Match Fuzzy pela Descrição (Levenshtein ratio >= 85%)
-            if not matched_product:
-                item_nome_norm = normalize_string(item['xProd'])
-                best_ratio = 0
-                best_match = None
-                for p in all_products:
-                    if p['nome_normalizado']:
-                        ratio = difflib.SequenceMatcher(None, item_nome_norm, p['nome_normalizado']).ratio()
-                        if ratio > best_ratio:
-                            best_ratio, best_match = ratio, p
-                
-                if best_ratio >= 0.85:
-                    matched_product = best_match
+            match_result = find_product_match(item, all_products, supplier_id)
+            matched_product = match_result['product'] if match_result['confidence'] >= 85 else None
 
             # 5. CRIAÇÃO OU ATUALIZAÇÃO DO PRODUTO
             if not matched_product:
@@ -134,14 +113,9 @@ def process_nfe_xml(xml_content: str):
                         VALUES (?, ?, ?, ?, ?)
                     """, (product_id, old_cost, new_cost, supplier_id, purchase_id))
 
-            # 6. MOVIMENTAÇÃO DE ESTOQUE
+            # 6. MOVIMENTAÇÃO DE ESTOQUE (Centralizada via stock_service)
             qtd = item['qCom']
-            cur.execute("""
-                INSERT INTO stock_movements (product_id, tipo, quantidade, custo_unitario, origem, referencia_id)
-                VALUES (?, 'entrada', ?, ?, 'NF-e', ?)
-            """, (product_id, qtd, item['vUnCom'], purchase_id))
-
-            cur.execute("UPDATE products SET estoque_atual = estoque_atual + ? WHERE id = ?", (qtd, product_id))
+            record_movement(product_id, 'entrada', qtd, item['vUnCom'], 'NF-e', purchase_id, conn=conn)
 
             cur.execute("""
                 INSERT INTO audit_log (entidade, entidade_id, acao, origem, before_payload, after_payload)

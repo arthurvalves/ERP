@@ -278,7 +278,6 @@ class OSModal(ctk.CTkToplevel):
     def toggle_installments_entry(self, selected_payment: str):
         """Mostra ou oculta o campo de parcelas com base na forma de pagamento."""
         if selected_payment == "CREDIARIO":
-            self.f_installments.pack(side="left", padx=5, before=self.children['!ctkbutton5']) # Garante a ordem correta
             self.f_installments.pack(side="left", padx=5, before=self.cb_pagamento.master.children['!ctkbutton']) # Garante a ordem correta
         else:
             self.f_installments.pack_forget()
