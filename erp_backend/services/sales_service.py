@@ -17,14 +17,37 @@ def create_sale(customer_id: int, total: float, desconto_total: float, forma_pag
     return sid
 
 def add_sale_item(sale_id: int, product_id: int, quantidade: float, preco_unitario: float, desconto_item: float = 0.0, conn=None):
-    sql = "INSERT INTO sales_items (sale_id,product_id,quantidade,preco_unitario,desconto_item) VALUES (?,?,?,?,?)"
-    if conn is not None:
-        item_id = execute_with_conn(conn, sql, (sale_id, product_id, quantidade, preco_unitario, desconto_item))
-    else:
-        item_id = execute(sql, (sale_id, product_id, quantidade, preco_unitario, desconto_item))
-    # record stock movement (negative quantity for saída)
+    if conn is None:
+        raise ValueError("Uma conexão (transação) é obrigatória para adicionar itens.")
+        
+    cur = conn.cursor()
+        
+    # 1. Verifica o stock atual
+    cur.execute("SELECT estoque_atual, nome FROM products WHERE id = ?", (product_id,))
+    prod = cur.fetchone()
+        
+    if not prod:
+        raise ValueError("Produto não encontrado.")
+            
+    if prod['estoque_atual'] < quantidade:
+        raise ValueError(
+            f"Estoque insuficiente para '{prod['nome']}'. "
+            f"Tentativa: {quantidade} | Disponível: {prod['estoque_atual']}"
+        )
+            
+    # 2. Insere o item da venda na tabela correta (sales_items)
+    cur.execute("""
+        INSERT INTO sales_items (sale_id, product_id, quantidade, preco_unitario, desconto_item)
+        VALUES (?, ?, ?, ?, ?)
+    """, (sale_id, product_id, quantidade, preco_unitario, desconto_item))
+    
+    # Captura o ID da linha que acabou de ser inserida
+    item_id = cur.lastrowid
+
+    # 3. Regista o movimento de stock e o log de auditoria
     record_movement(product_id, 'saida', -abs(quantidade), preco_unitario, 'PDV', sale_id, conn=conn)
     log('sale_item', item_id, 'CREATE', {'sale_id': sale_id, 'product_id': product_id, 'q': quantidade}, conn=conn)
+    
     return item_id
 
 def process_sale_transaction(customer_id: int, items: list, forma_pagamento: str, desconto_total: float = 0.0):

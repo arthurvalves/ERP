@@ -20,9 +20,51 @@ class ProductModal(ctk.CTkToplevel):
         self.load_data()
         self.bind("<Escape>", lambda e: self.destroy())
         
+        self.limit = 50
+        self.offset = 0
+
+        # 2. No final da função setup_ui(), adicione os botões de páginação abaixo da tabela:
+        frame_paginacao = ctk.CTkFrame(self, fg_color="transparent")
+        frame_paginacao.pack(pady=5)
+        
+        self.btn_prev = ctk.CTkButton(frame_paginacao, text="<< Anterior", width=100, command=self.pagina_anterior)
+        self.btn_prev.pack(side="left", padx=10)
+        
+        self.lbl_pagina = ctk.CTkLabel(frame_paginacao, text="Página 1", font=("Roboto", 14, "bold"))
+        self.lbl_pagina.pack(side="left", padx=10)
+        
+        self.btn_next = ctk.CTkButton(frame_paginacao, text="Próxima >>", width=100, command=self.proxima_pagina)
+        self.btn_next.pack(side="left", padx=10)
+    
+    def pagina_anterior(self):
+        if self.offset >= self.limit:
+            self.offset -= self.limit
+            self.load_data()
+
+    def proxima_pagina(self):
+        # Só avança se a tabela estiver cheia (indicando que há mais itens)
+        if len(self.table.get_children()) == self.limit:
+            self.offset += self.limit
+            self.load_data()
+    
+    def get_categorias(self):
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT nome FROM categories")
+        cats = [row['nome'] for row in cur.fetchall()]
+        conn.close()
+        return cats
+    
     def setup_ui(self):
         self.frame = ctk.CTkFrame(self)
         self.frame.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        categorias = self.get_categorias()
+        ctk.CTkLabel(self.frame, text="Categoria:", font=("Roboto", 12)).pack(anchor="w")
+        self.cb_categoria = ctk.CTkOptionMenu(self.frame, values=self.get_categorias()) 
+        self.cb_categoria.pack(fill="x", pady=(0, 10))
+        
+        self.cb_categoria.configure(command=self.aplicar_margem_categoria)
         
         ctk.CTkLabel(self.frame, text="Nome do Produto:", font=("Roboto", 14, "bold")).pack(anchor="w", pady=(10, 0))
         self.ent_nome = ctk.CTkEntry(self.frame, font=("Roboto", 14), width=400)
@@ -91,6 +133,27 @@ class ProductModal(ctk.CTkToplevel):
         ctk.CTkButton(footer, text="SALVAR", font=("Roboto", 16, "bold"), fg_color="#2ecc71", hover_color="#27ae60", command=self.save).pack(side="right", padx=5)
         ctk.CTkButton(footer, text="CANCELAR", font=("Roboto", 16), fg_color="#e74c3c", hover_color="#c0392b", command=self.destroy).pack(side="right", padx=5)
 
+    def aplicar_margem_categoria(self, nome_categoria):
+        try:
+            custo = float(self.ent_custo.get().replace(",", "."))
+            if custo <= 0: return
+            
+            conn = get_connection()
+            cur = conn.cursor()
+            cur.execute("SELECT margem_padrao FROM categories WHERE nome = ?", (nome_categoria,))
+            row = cur.fetchone()
+            conn.close()
+            
+            if row and row['margem_padrao']:
+                margem = float(row['margem_padrao'])
+                novo_preco = custo * (1 + (margem / 100))
+                
+                # Atualiza o campo de Preço de Venda automaticamente
+                self.ent_preco.delete(0, 'end')
+                self.ent_preco.insert(0, f"{novo_preco:.2f}")
+        except ValueError:
+            pass # Ignora se o custo estiver vazio ou inválido no momento
+
     def load_data(self):
         if not self.product_id:
             self.ent_nome.insert(0, self.initial_data.get('nome', ''))
@@ -126,7 +189,18 @@ class ProductModal(ctk.CTkToplevel):
             self.ent_custo.insert(0, f"{custo:.2f}")
             self.ent_preco.insert(0, f"{preco:.2f}")
             self.on_price_change()
+            
+        if query and query != getattr(self, 'last_query', ''):
+            self.offset = 0
+        self.last_query = query
 
+        sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
+        params = params + (self.limit, self.offset)
+        
+        pagina_atual = (self.offset // self.limit) + 1
+        self.lbl_pagina.configure(text=f"Página {pagina_atual}")
+        self.btn_prev.configure(state="normal" if self.offset > 0 else "disabled")
+        
     def _update_margin_color(self, margem: float):
         if margem < 0:
             self.ent_margem.configure(text_color="#e74c3c")
@@ -369,23 +443,21 @@ class ProductsView(ctk.CTkFrame):
         self.app_window.show_view(NFeView)
 
     def recalc_stock(self):
-        try:
-            from erp_backend.core.stock_reconciliation import detect_stock_inconsistencies, recompute_stock
-            anomalies = detect_stock_inconsistencies()
-            if not anomalies:
-                messagebox.showinfo("Estoque", "Estoque está perfeitamente consistente.")
-                return
-            for a in anomalies:
-                recompute_stock(a['product_id'])
-            messagebox.showinfo("Estoque", f"{len(anomalies)} inconsistências corrigidas.")
-            self.load_data()
-        except ImportError:
-            messagebox.showerror("Erro", "Módulo de reconciliação não disponível.")
-        else:
-            cur.execute("SELECT nome, sku, estoque_atual, preco_venda FROM products ORDER BY nome LIMIT 100")
-        for row in cur.fetchall():
-            self.table.insert("", "end", values=(row['nome'], row['sku'], f"{row['estoque_atual']:.3f}".rstrip('0').rstrip('.'), f"R$ {row['preco_venda']:.2f}"))
-        conn.close()
+            try:
+                from erp_backend.core.stock_reconciliation import detect_stock_inconsistencies, recompute_stock
+                anomalies = detect_stock_inconsistencies()
+                if not anomalies:
+                    messagebox.showinfo("Estoque", "Estoque está perfeitamente consistente.")
+                    return
+                for a in anomalies:
+                    recompute_stock(a['product_id'])
+                messagebox.showinfo("Estoque", f"{len(anomalies)} inconsistências corrigidas.")
+                self.load_data()
+            except ImportError:
+                messagebox.showerror("Erro", "Módulo de reconciliação não disponível.")
+            
+    # Nota: A função on_search já está definida corretamente mais acima na classe (linha 204).
+    # O on_search duplicado e as chamadas soltas do cursor (cur) foram completamente removidas.
         
     def on_search(self, event):
         self.load_data(self.search_entry.get().strip())

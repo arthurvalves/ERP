@@ -6,15 +6,9 @@ import xml.etree.ElementTree as ET
 from erp_frontend.components.table import TableComponent
 from erp_backend.utils.db import get_connection
 
-try:
-    from erp_backend.core.nfe_processor import process_nfe_xml
-except ImportError:
-    from nfe_processor import process_nfe_xml
-
-try:
-    from erp_backend.core.nfe.nfe_xml_parser import parse_nfe_xml
-except ImportError:
-    from nfe_xml_parser import parse_nfe_xml
+# IMPORTAÇÕES DEFINITIVAS - Sem try/except
+from erp_backend.core.nfe_processor import process_nfe_xml
+from erp_backend.core.nfe.nfe_xml_parser import parse_nfe_xml
 
 
 class NFeView(ctk.CTkFrame):
@@ -64,6 +58,7 @@ class NFeView(ctk.CTkFrame):
         self.table.tag_configure("ok", foreground="#2ecc71")
         self.table.tag_configure("novo", foreground="#f1c40f")
         self.table.tag_configure("divergente", foreground="#e74c3c")
+        self.table.tag_configure("revisao", foreground="#e67e22") # <-- NOVA COR LARANJA
         
         self.table.pack(fill="both", expand=True, padx=20, pady=10)
         self.table.bind("<Double-1>", lambda e: self.edit_item())
@@ -166,6 +161,7 @@ class NFeView(ctk.CTkFrame):
         for idx, item in enumerate(self.current_parsed_data['items']):
             ean = item['cEAN'] if item['cEAN'] and 'SEM GTIN' not in item['cEAN'].upper() else None
             matched = None
+            possivel_match = None  # <-- CORREÇÃO: Inicializar a variável aqui!
             conf = 0
             
             if ean:
@@ -184,25 +180,28 @@ class NFeView(ctk.CTkFrame):
                         ratio = difflib.SequenceMatcher(None, item_nome_norm, p['nome_normalizado']).ratio()
                         if ratio > best_ratio:
                             best_ratio, best_match = ratio, p
+                
                 if best_ratio >= 0.85:
                     matched = best_match
                     conf = int(best_ratio * 100)
+                elif best_ratio >= 0.60:
+                    # NOVO COMPORTAMENTO: Entre 60% e 84% vai para REVISÃO
+                    conf = int(best_ratio * 100)
+                    possivel_match = best_match
 
             v_un = float(item['vUnCom'])
             q_com = float(item['qCom'])
-            status, tag, margem = "OK", "ok", "--"
-            desc = matched['nome'] if matched else f"NOVO: {item['xProd']}"
+            margem = "--"
             
             self.simulated_stats['items'] += 1
             self.simulated_stats['stock'] += q_com
             
-            if not matched:
-                status, tag = "NOVO", "novo"
-                item_iid = f"novo_{idx}"
-                self.simulated_stats['new'] += 1
-            else:
+            # Lógica de Tags atualizada
+            if matched:
                 status, tag = "OK", "ok"
                 item_iid = f"matched_{matched['id']}"
+                desc = matched['nome']
+                
                 old_cost = matched['custo']
                 if old_cost and old_cost > 0:
                     if abs(v_un - old_cost) / old_cost > 0.15:
@@ -211,6 +210,19 @@ class NFeView(ctk.CTkFrame):
                 pv = matched['preco_venda']
                 if pv and pv > 0:
                     margem = f"{((pv - v_un) / pv) * 100:.1f}%"
+                    
+            elif conf > 0 and conf < 85 and possivel_match: # <-- CORREÇÃO: Verificar se possivel_match existe!
+                # SE CAIU AQUI, é uma quase correspondência
+                status, tag = "REVISÃO", "revisao"
+                item_iid = f"revisao_{idx}_{possivel_match['id']}"
+                desc = f"⚠️ PARECIDO COM: {possivel_match['nome']} ({conf}%)"
+                self.simulated_stats['revisao'] = self.simulated_stats.get('revisao', 0) + 1
+                
+            else:
+                status, tag = "NOVO", "novo"
+                item_iid = f"novo_{idx}"
+                desc = f"NOVO: {item['xProd']}"
+                self.simulated_stats['new'] += 1
 
             self.table.insert("", "end", iid=item_iid, values=(
                 desc, item['cEAN'] or item['cProd'], f"{q_com:.2f}",
@@ -223,6 +235,12 @@ class NFeView(ctk.CTkFrame):
 
     def run_simulation(self):
         if self.step < 2: return
+        
+        if self.simulated_stats.get('revisao', 0) > 0:
+            messagebox.showwarning("Ação Obrigatória", 
+                                   f"Existem {self.simulated_stats['revisao']} produtos pendentes de REVISÃO (linhas laranja).\n\n"
+                                   f"O sistema encontrou produtos muito parecidos. Dê um duplo-clique neles para confirmar se é o mesmo produto ou se deve ser registado como novo.")
+            return
         
         if self.simulated_stats['new'] > 0:
             messagebox.showwarning("Ação Obrigatória", 

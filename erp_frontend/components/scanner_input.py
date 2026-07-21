@@ -28,3 +28,18 @@ class InputBarScanner(ctk.CTkFrame):
             self.on_submit(value)
         self.entry.delete(0, "end")
         self._focus_entry()
+        
+    def _force_focus(self):
+            if not self.keep_focus_active:
+                return
+            current_focus = self.focus_get()
+            if current_focus:
+                grabbing_window = current_focus.grab_current()
+                if grabbing_window and grabbing_window != self.winfo_toplevel():
+                    self.after(500, self._force_focus)
+                    return
+                if current_focus.winfo_class() in ('Entry', 'TEntry', 'Text') and current_focus != self.entry:
+                    self.after(500, self._force_focus)
+                    return
+            self.entry.focus_set()
+            self.after(100, self._force_focus)

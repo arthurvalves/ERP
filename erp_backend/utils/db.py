@@ -2,12 +2,17 @@ import sqlite3
 from typing import Any, List, Tuple, Generator, Optional
 from contextlib import contextmanager
 from ..config import DEFAULTS
+import os
+
+DB_PATH = os.environ.get('DB_PATH', 'erp.db')
 
 def get_connection(db_path: str = None):
-    db_path = db_path or DEFAULTS["DB_PATH"]
-    conn = sqlite3.connect(db_path)
+    db_path = db_path or DEFAULTS.get("DB_PATH", "erp.db")
+    conn = sqlite3.connect(db_path, timeout=15.0)
     conn.row_factory = sqlite3.Row
-    conn.execute('PRAGMA foreign_keys = ON')
+    conn.execute('PRAGMA foreign_keys = ON;')
+    conn.execute('PRAGMA journal_mode=WAL;')
+    conn.execute('PRAGMA synchronous=NORMAL;')
     return conn
 
 def fetchone(query: str, params: Tuple = ()): 

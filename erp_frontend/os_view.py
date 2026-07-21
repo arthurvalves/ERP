@@ -1,8 +1,9 @@
 import customtkinter as ctk
 from tkinter import messagebox
+from erp_backend.utils.db import transaction
 from erp_frontend.components.table import TableComponent
 from erp_backend.utils.db import get_connection
-from erp_backend.services.sales_service import process_sale_transaction
+from erp_backend.services.sales_service import create_sale, add_sale_item
 
 class OSModal(ctk.CTkToplevel):
     def __init__(self, master, os_id=None, on_save=None):
@@ -285,22 +286,38 @@ class OSModal(ctk.CTkToplevel):
             
         if not self.save(): return
         
-        sale_items = [{'product_id': i['product_id'], 'quantidade': i['quantidade'], 'preco_unitario': i['preco_unitario'], 'desconto_item': i.get('desconto_item', 0.0)} for i in self.items]
+        # 1. Calcula o total somando peças e serviços
+        t_pecas = sum((i['quantidade'] * i['preco_unitario']) - i.get('desconto_item', 0.0) for i in self.items if i['tipo'] == 'peca')
+        t_servicos = sum((i['quantidade'] * i['preco_unitario']) - i.get('desconto_item', 0.0) for i in self.items if i['tipo'] == 'servico')
+        t_geral = t_pecas + t_servicos
+        
+        from erp_backend.utils.db import transaction
+        from erp_backend.services.sales_service import create_sale, add_sale_item
         
         try:
-            process_sale_transaction(customer_id=None, items=sale_items, forma_pagamento=self.cb_pagamento.get(), desconto_total=0.0)
-            
-            conn = get_connection()
-            conn.execute("UPDATE service_orders SET status='Faturada', data_fechamento=CURRENT_TIMESTAMP WHERE id=?", (self.os_id,))
-            conn.commit()
-            conn.close()
-            
+            # 2. Inicia a transação atómica
+            with transaction() as conn:
+                # Passamos None no customer_id porque a OS ainda não exige cadastro rígido de cliente (usa apenas a placa)
+                sale_id = create_sale(None, t_geral, 0.0, self.cb_pagamento.get(), conn=conn)
+                
+                # Insere os itens da OS na Venda (o que vai acionar a nossa verificação de stock)
+                for item in self.items:
+                    add_sale_item(sale_id, item['product_id'], item['quantidade'], item['preco_unitario'], item.get('desconto_item', 0.0), conn=conn)
+                
+                # Atualiza o status da OS na mesma transação
+                conn.execute("UPDATE service_orders SET status='Faturada', data_fechamento=CURRENT_TIMESTAMP WHERE id=?", (self.os_id,))
+                
+            # 3. Se chegou aqui, nada falhou! Atualiza a interface
             self.cb_status.set("Faturada")
             if self.on_save: self.on_save()
-            messagebox.showinfo("Sucesso", "OS Faturada! O estoque das peças foi baixado e a venda registrada no caixa.")
+            messagebox.showinfo("Sucesso", "OS Faturada! O stock das peças foi baixado e a venda registada no caixa.")
             self.destroy()
+            
+        except ValueError as ve:
+            # Captura a nossa exceção de "Stock Insuficiente"
+            messagebox.showwarning("Aviso de Stock", str(ve))
         except Exception as e:
-            messagebox.showerror("Erro na Cobrança", f"Falha ao integrar com o Caixa:\n{e}")
+            messagebox.showerror("Erro Crítico", f"Falha ao faturar a OS. Nenhuma alteração foi guardada.\n\nDetalhes: {e}")
 
 class OSView(ctk.CTkFrame):
     def __init__(self, master, app_window, **kwargs):
