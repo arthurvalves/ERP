@@ -5,7 +5,7 @@ from erp_frontend.components.table import TableComponent
 from erp_backend.utils.db import get_connection
 from erp_backend.services.sales_service import create_sale, add_sale_item
 # Imports de serviços
-from erp_backend.services import vehicle_service, customer_service
+from erp_backend.services import vehicle_service, customer_service, user_service
 from erp_frontend.modals.customer_search_modal import CustomerSearchModal
 from erp_frontend.modals.vehicle_modal import VehicleModal
 
@@ -23,6 +23,7 @@ class OSModal(ctk.CTkToplevel):
         # Variáveis de estado para os novos IDs
         self.customer_id = None
         self.vehicle_id = None
+        self.technicians = user_service.get_technicians()
         
         self.setup_ui()
         self.load_data()
@@ -43,16 +44,6 @@ class OSModal(ctk.CTkToplevel):
         self.ent_placa.pack(fill="x")
         self.ent_placa.bind("<Return>", self.search_vehicle_by_plate)
 
-        # Labels para exibir informações do cliente e veículo (substitui os campos de entrada)
-        self.lbl_vehicle_info = ctk.CTkLabel(f_header, text="Veículo: --", font=("Roboto", 14), anchor="w")
-        self.lbl_vehicle_info.pack(side="left", expand=True, fill="x", padx=10)
-
-        self.lbl_customer_info = ctk.CTkLabel(f_header, text="Cliente: --", font=("Roboto", 14), anchor="w")
-        self.lbl_customer_info.pack(side="left", expand=True, fill="x", padx=10)
-
-        # Botão para editar/adicionar veículo
-        self.btn_edit_vehicle = ctk.CTkButton(f_header, text="EDITAR VEÍCULO", font=("Roboto", 12), command=self.edit_vehicle, state="disabled")
-        self.btn_edit_vehicle.pack(side="left", padx=10)
 
         # --- KM ATUAL ---
         f_km = ctk.CTkFrame(f_header, fg_color="transparent")
@@ -105,6 +96,13 @@ class OSModal(ctk.CTkToplevel):
         btn_add = ctk.CTkButton(f_add, text="ADICIONAR", fg_color="#3498db", hover_color="#2980b9", font=("Roboto", 14, "bold"), command=self.add_item)
         btn_add.pack(side="left", padx=10)
         
+        # Seleção de Técnico Responsável
+        ctk.CTkLabel(f_add, text="Técnico:", font=("Roboto", 12)).pack(side="left", padx=(20, 5))
+        technician_names = [tech['username'] for tech in self.technicians]
+        self.cb_technician = ctk.CTkOptionMenu(f_add, values=technician_names, width=150, font=("Roboto", 14))
+        if technician_names: self.cb_technician.set(technician_names[0])
+        self.cb_technician.pack(side="left")
+
         ctk.CTkLabel(f_add, text="[DEL] para remover item selecionado", text_color="#7f8c8d", font=("Roboto", 10)).pack(side="right", padx=10)
 
         # --- TABELA DE ITENS ---
@@ -112,7 +110,7 @@ class OSModal(ctk.CTkToplevel):
         self.table = TableComponent(self.frame, columns)
         self.table.column("TIPO", width=120)
         self.table.column("CÓDIGO", width=120)
-        self.table.column("NOME", width=350, anchor="w")
+        self.table.column("NOME", width=300, anchor="w")
         self.table.column("QTD", width=60)
         self.table.column("UNIT", width=100)
         self.table.column("TOTAL", width=100)
@@ -141,7 +139,7 @@ class OSModal(ctk.CTkToplevel):
         f_actions.pack(side="right", fill="y")
 
         ctk.CTkLabel(f_actions, text="Forma Pgto:", font=("Roboto", 12)).pack(side="left", padx=5)
-        self.cb_pagamento = ctk.CTkOptionMenu(f_actions, values=["DINHEIRO", "PIX", "CARTÃO CRÉDITO", "CARTÃO DÉBITO", "MISTO"], width=140)
+        self.cb_pagamento = ctk.CTkOptionMenu(f_actions, values=["DINHEIRO", "PIX", "CARTÃO CRÉDITO", "CARTÃO DÉBITO", "CREDIARIO", "MISTO"], width=140, command=self.toggle_installments_entry)
         self.cb_pagamento.pack(side="left", padx=5)
 
         btn_faturar = ctk.CTkButton(f_actions, text="FATURAR E COBRAR", font=("Roboto", 16, "bold"), height=45, fg_color="#2ecc71", hover_color="#27ae60", command=self.faturar)
@@ -174,7 +172,6 @@ class OSModal(ctk.CTkToplevel):
                 if vehicle:
                     self.ent_placa.insert(0, vehicle.plate)
                     self.ent_km.insert(0, str(vehicle.current_km or ''))
-                    self.update_vehicle_and_customer_info(vehicle, conn=conn)
                     self.btn_edit_vehicle.configure(state="normal")
             
             # Carrega a data e hora do agendamento, se houver
@@ -185,9 +182,10 @@ class OSModal(ctk.CTkToplevel):
                 self.ent_schedule_time.insert(0, dt.strftime('%H:%M'))
 
         cur.execute("""
-            SELECT i.*, p.nome, p.sku, p.codigo_barras 
+            SELECT i.*, p.nome, p.sku, p.codigo_barras, u.username as technician_name
             FROM service_order_items i 
             JOIN products p ON i.product_id = p.id 
+            LEFT JOIN users u ON i.technician_id = u.id
             WHERE i.service_order_id = ?
         """, (self.os_id,))
         
@@ -199,7 +197,9 @@ class OSModal(ctk.CTkToplevel):
                 'codigo': row['sku'] or row['codigo_barras'],
                 'quantidade': row['quantidade'],
                 'preco_unitario': row['preco_unitario'],
-                'desconto_item': row['desconto_item']
+                'desconto_item': row['desconto_item'],
+                'technician_id': row['technician_id'],
+                'technician_name': row['technician_name']
             })
         conn.close()
         self.refresh_items()
@@ -210,7 +210,6 @@ class OSModal(ctk.CTkToplevel):
 
         vehicle = vehicle_service.get_vehicle_by_plate(plate)
         if vehicle:
-            self.update_vehicle_and_customer_info(vehicle)
             self.btn_edit_vehicle.configure(state="normal")
         else:
             if messagebox.askyesno("Veículo não encontrado", f"A placa '{plate}' não está registada.\nDeseja adicionar um novo veículo?"):
@@ -220,14 +219,6 @@ class OSModal(ctk.CTkToplevel):
         self.vehicle_id = vehicle.id
         self.customer_id = vehicle.customer_id
         self.lbl_vehicle_info.configure(text=f"Veículo: {vehicle.brand or ''} {vehicle.model or ''} ({vehicle.year or ''})")
-        self.ent_km.delete(0, 'end')
-        self.ent_km.insert(0, str(vehicle.current_km or ''))
-        
-        customer = customer_service.get_customer_by_id(self.customer_id, conn=conn)
-        if customer:
-            self.lbl_customer_info.configure(text=f"Cliente: {customer.nome_razao_social}")
-        else:
-            self.lbl_customer_info.configure(text="Cliente não encontrado!", text_color="red")
 
     def edit_vehicle(self, plate_suggestion=None):
         # Se não há cliente, força a seleção de um primeiro
@@ -250,8 +241,6 @@ class OSModal(ctk.CTkToplevel):
             if vehicle:
                 self.ent_placa.delete(0, 'end')
                 self.ent_placa.insert(0, vehicle.plate)
-                self.ent_km.delete(0, 'end')
-                self.ent_km.insert(0, str(vehicle.current_km or ''))
                 self.update_vehicle_and_customer_info(vehicle)
                 self.btn_edit_vehicle.configure(state="normal")
 
@@ -260,6 +249,12 @@ class OSModal(ctk.CTkToplevel):
         dialog = CustomerSearchModal(self)
         return dialog.get_input()
 
+    def toggle_installments_entry(self, selected_payment: str):
+        """Mostra ou oculta o campo de parcelas com base na forma de pagamento."""
+        if selected_payment == "CREDIARIO":
+            self.f_installments.pack(side="left", padx=5, before=self.children['!ctkbutton5']) # Garante a ordem correta
+        else:
+            self.f_installments.pack_forget()
 
     def add_item(self):
         code = self.ent_code.get().strip()
@@ -267,6 +262,13 @@ class OSModal(ctk.CTkToplevel):
             qtd = float(self.ent_qtd.get().replace(",", "."))
         except ValueError:
             qtd = 1.0
+
+        technician_name = self.cb_technician.get()
+        technician_id = None
+        if technician_name:
+            tech_data = next((t for t in self.technicians if t['username'] == technician_name), None)
+            if tech_data:
+                technician_id = tech_data['id']
 
         if not code:
             return
@@ -281,15 +283,15 @@ class OSModal(ctk.CTkToplevel):
             messagebox.showwarning("Não Encontrado", f"Peça/Serviço '{code}' não localizado no sistema.")
             return
 
-        self.items.append({
-            'product_id': row['id'],
-            'tipo': 'servico' if 'servico' in row['nome'].lower() else 'peca', # Heurística temporária
-            'nome': row['nome'],
-            'codigo': row['sku'] or row['codigo_barras'],
-            'quantidade': qtd,
-            'preco_unitario': row['preco_venda'] or 0.0,
-            'desconto_item': 0.0
-        })
+        # self.items.append({
+        #     'product_id': row['id'],
+        #     'tipo': 'servico' if 'servico' in row['nome'].lower() else 'peca', # Heurística temporária
+        #     'nome': row['nome'],
+        #     'codigo': row['sku'] or row['codigo_barras'],
+        #     'quantidade': qtd,
+        #     'preco_unitario': row['preco_venda'] or 0.0,
+        #     'desconto_item': 0.0
+        # })
         
         self.ent_code.delete(0, 'end')
         self.ent_qtd.delete(0, 'end')
@@ -322,7 +324,7 @@ class OSModal(ctk.CTkToplevel):
                 tipo_str, tag = "MÃO DE OBRA", "servico"
                 
             self.table.insert("", "end", iid=str(idx), values=(
-                tipo_str, item['codigo'], item['nome'],
+                tipo_str, item['codigo'], item['nome'], item.get('technician_name', '--'),
                 f"{item['quantidade']:.2f}", f"R$ {item['preco_unitario']:.2f}", f"R$ {subtotal:.2f}"
             ), tags=(tag,))
             
@@ -364,12 +366,12 @@ class OSModal(ctk.CTkToplevel):
                 if current_km.isdigit():
                     cur.execute("UPDATE vehicles SET current_km = ? WHERE id = ?", (int(current_km), self.vehicle_id))
 
-                cur.execute("UPDATE service_orders SET customer_id=?, vehicle_id=?, descricao_problema=?, status=?, total_pecas=?, total_servicos=?, total_geral=?, scheduled_start_time=? WHERE id=?",
-                            (self.customer_id, self.vehicle_id, desc, status, t_pecas, t_servicos, t_geral, schedule_datetime_str, self.os_id))
+                cur.execute("UPDATE service_orders SET customer_id=?, vehicle_id=?, descricao_problema=?, status=?, total_pecas=?, total_servicos=?, total_geral=? WHERE id=?",
+                            (self.customer_id, self.vehicle_id, desc, status, t_pecas, t_servicos, t_geral, self.os_id))
                 cur.execute("DELETE FROM service_order_items WHERE service_order_id=?", (self.os_id,))
             else:
-                cur.execute("INSERT INTO service_orders (customer_id, vehicle_id, descricao_problema, status, total_pecas, total_servicos, total_geral, scheduled_start_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                            (self.customer_id, self.vehicle_id, desc, status, t_pecas, t_servicos, t_geral, schedule_datetime_str))
+                cur.execute("INSERT INTO service_orders (customer_id, vehicle_id, descricao_problema, status, total_pecas, total_servicos, total_geral) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                            (self.customer_id, self.vehicle_id, desc, status, t_pecas, t_servicos, t_geral))
                 self.os_id = cur.lastrowid
 
             for item in self.items:
@@ -429,7 +431,18 @@ class OSModal(ctk.CTkToplevel):
         try:
             # 2. Inicia a transação atómica
             with transaction() as conn:
-                sale_id = create_sale(self.customer_id, t_geral, 0.0, self.cb_pagamento.get(), conn=conn)
+                payment_method = self.cb_pagamento.get()
+                installments = 1
+
+                if payment_method == 'CREDIARIO':
+                    try:
+                        installments = int(self.ent_installments.get())
+                        if installments <= 0: raise ValueError()
+                    except ValueError:
+                        messagebox.showerror("Erro", "Número de parcelas inválido para o crediário.")
+                        return
+
+                sale_id = create_sale(self.customer_id, t_geral, 0.0, payment_method, installments, conn=conn)
                 
                 # Insere os itens da OS na Venda (o que vai acionar a nossa verificação de stock)
                 for item in self.items:
