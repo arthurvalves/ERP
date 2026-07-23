@@ -10,7 +10,6 @@ class QuoteModal(ctk.CTkToplevel):
     def __init__(self, master, quote_id=None, on_save=None):
         super().__init__(master)
         self.title(f"Orçamento #{quote_id}" if quote_id else "Novo Orçamento")
-        self.geometry("950x700")
         self.transient(master)
         self.grab_set()
 
@@ -23,6 +22,18 @@ class QuoteModal(ctk.CTkToplevel):
         self._setup_ui()
         self.load_data()
         self.bind("<Escape>", lambda e: self.destroy())
+        self.after(10, self._center_window)
+
+    def _center_window(self):
+        self.update_idletasks()
+        width = 950
+        height = 700
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        x = (screen_width // 2) - (width // 2)
+        y = (screen_height // 2) - (height // 2)
+        self.geometry(f'{width}x{height}+{x}+{y}')
+        self.resizable(False, False)
 
     def _setup_ui(self):
         self.frame = ctk.CTkFrame(self)

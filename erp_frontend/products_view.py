@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from tkinter import messagebox
+from tkinter import messagebox, Menu
 from erp_frontend.components.table import TableComponent
 from erp_backend.utils.db import get_connection
 
@@ -7,7 +7,6 @@ class ProductModal(ctk.CTkToplevel):
     def __init__(self, master, product_id=None, initial_data=None, on_save=None):
         super().__init__(master)
         self.title("Editar Produto" if product_id else "Novo Produto") # Corrigido
-        self.geometry("500x550")
         self.transient(master)
         self.grab_set()
         
@@ -15,24 +14,56 @@ class ProductModal(ctk.CTkToplevel):
         self.initial_data = initial_data or {}
         self.on_save = on_save
         self._updating = False
-        
+
         self.setup_ui()
         self.load_data()
         self.bind("<Escape>", lambda e: self.destroy())
+        self.after(10, self._center_window)
+
+    def _center_window(self):
+        self.update_idletasks()
+        width = 900
+        height = 800
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        x = (screen_width // 2) - (width // 2)
+        y = (screen_height // 2) - (height // 2)
+        self.geometry(f'{width}x{height}+{x}+{y}')
+        self.resizable(False, False)
     
     def get_categorias(self):
-        conn = get_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT nome FROM categories")
-        cats = [row['nome'] for row in cur.fetchall()]
-        conn.close()
-        return cats
+        # Substituído para usar uma lista fixa e padronizada, garantindo consistência.
+        return [
+            "Motor",
+            "Alimentação",
+            "Ignição",
+            "Arrefecimento",
+            "Lubrificação",
+            "Admissão e Escape",
+            "Transmissão",
+            "Freios",
+            "Suspensão",
+            "Direção",
+            "Rodas e Cubos",
+            "Sistema Elétrico",
+            "Iluminação",
+            "Sensores e Eletrônica",
+            "Climatização",
+            "Carroceria",
+            "Vidros",
+            "Limpadores",
+            "Interior",
+            "Fechaduras e Segurança",
+            "Borrachas e Vedação",
+            "Fixação",
+            "Fluidos e Produtos Químicos",
+            "Acessórios"
+        ]
     
     def setup_ui(self):
         self.frame = ctk.CTkFrame(self)
         self.frame.pack(fill="both", expand=True, padx=20, pady=20)
         
-        categorias = self.get_categorias()
         ctk.CTkLabel(self.frame, text="Categoria:", font=("Roboto", 12)).pack(anchor="w")
         self.cb_categoria = ctk.CTkOptionMenu(self.frame, values=self.get_categorias()) 
         self.cb_categoria.pack(fill="x", pady=(0, 10))
@@ -240,6 +271,11 @@ class ProductModal(ctk.CTkToplevel):
         except ValueError:
             messagebox.showerror("Erro", "Valores numéricos inválidos.")
             return
+
+        # Validação para o nome do produto
+        if not all(c.isalnum() or c.isspace() for c in nome):
+            messagebox.showerror("Erro de Validação", "O nome do produto deve conter apenas letras, números e espaços.")
+            return
             
         if not nome:
             messagebox.showerror("Erro", "Nome é obrigatório.")
@@ -341,7 +377,7 @@ class ProductsView(ctk.CTkFrame):
         btn_import.pack(side="right", padx=5)
         
         columns = ("NOME", "SKU", "EAN", "ESTOQUE", "CUSTO", "PREÇO", "STATUS")
-        self.table = TableComponent(self, columns)
+        self.table = TableComponent(self, columns, style="Products.Treeview")
         self.table.column("NOME", width=350, anchor="w")
         self.table.column("SKU", width=120)
         self.table.column("EAN", width=120)
@@ -357,6 +393,8 @@ class ProductsView(ctk.CTkFrame):
         self.table.pack(fill="both", expand=True, padx=20, pady=10)
         self.table.bind("<Double-1>", lambda e: self.edit_selected())
         self.table.bind("<Return>", lambda e: self.edit_selected())
+        self.table.bind("<Button-3>", self._show_context_menu) # Botão direito
+        self._create_context_menu()
         
     def load_data(self, event=None):
         query = self.search_entry.get().strip()
@@ -419,6 +457,21 @@ class ProductsView(ctk.CTkFrame):
         
     def on_search(self, event):
         self.load_data()
+
+    def _create_context_menu(self):
+        self.context_menu = Menu(self.table, tearoff=0, font=("Roboto", 12))
+        self.context_menu.add_command(label="Novo Produto", command=self.new_product)
+        self.context_menu.add_command(label="Editar Produto Selecionado", command=self.edit_selected)
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label="Importar NF-e", command=self.import_nfe)
+
+    def _show_context_menu(self, event):
+        selection = self.table.selection()
+        if selection:
+            self.context_menu.entryconfigure("Editar Produto Selecionado", state="normal")
+        else:
+            self.context_menu.entryconfigure("Editar Produto Selecionado", state="disabled")
+        self.context_menu.post(event.x_root, event.y_root)
 
     def new_product(self):
         ProductModal(self, on_save=self.load_data)

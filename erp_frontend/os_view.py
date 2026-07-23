@@ -1,6 +1,5 @@
 import customtkinter as ctk
-from tkinter import messagebox, simpledialog
-from erp_backend.utils.db import transaction
+from tkinter import messagebox, simpledialog, ttk, Menu
 from erp_frontend.components.table import TableComponent
 from erp_backend.utils.db import get_connection
 from erp_backend.services.sales_service import create_sale, add_sale_item
@@ -13,7 +12,6 @@ class OSModal(ctk.CTkToplevel):
     def __init__(self, master, os_id=None, on_save=None):
         super().__init__(master)
         self.title(f"Ordem de Serviço #{os_id}" if os_id else "Nova Ordem de Serviço") # Corrigido
-        self.geometry("950x750")
         self.transient(master)
         self.grab_set()
 
@@ -28,6 +26,19 @@ class OSModal(ctk.CTkToplevel):
         self.setup_ui()
         self.load_data()
         self.bind("<Escape>", lambda e: self.destroy())
+        self.after(10, self._center_window)
+
+    def _center_window(self):
+        self.update_idletasks()
+        width = 1200
+        height = 800
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        x = (screen_width // 2) - (width // 2)
+        y = (screen_height // 2) - (height // 2)
+        self.geometry(f'{width}x{height}+{x}+{y}')
+        self.resizable(False, False)
+
 
     def setup_ui(self):
         self.frame = ctk.CTkFrame(self)
@@ -541,6 +552,8 @@ class OSView(ctk.CTkFrame):
         self.table.column("DATA ABERTURA", width=150)
         self.table.pack(fill="both", expand=True, padx=20, pady=10)
         self.table.bind("<Double-1>", lambda e: self.edit_selected())
+        self.table.bind("<Button-3>", self._show_context_menu) # Botão direito
+        self._create_context_menu()
         
     def load_data(self):
         search_term = self.search_entry.get().strip()
@@ -575,6 +588,21 @@ class OSView(ctk.CTkFrame):
             ))
         conn.close()
         
+    def _create_context_menu(self):
+        self.context_menu = Menu(self.table, tearoff=0, font=("Roboto", 12))
+        self.context_menu.add_command(label="Nova Ordem de Serviço", command=self.new_os)
+        self.context_menu.add_command(label="Editar O.S. Selecionada", command=self.edit_selected)
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label="Atualizar Lista", command=self.load_data)
+
+    def _show_context_menu(self, event):
+        selection = self.table.selection()
+        if selection:
+            self.context_menu.entryconfigure("Editar O.S. Selecionada", state="normal")
+        else:
+            self.context_menu.entryconfigure("Editar O.S. Selecionada", state="disabled")
+        self.context_menu.post(event.x_root, event.y_root)
+
     def new_os(self):
         OSModal(self, on_save=self.load_data)
         

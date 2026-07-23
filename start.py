@@ -26,6 +26,11 @@ if __name__ == "__main__":
     run_autocenter_migrations()
     auto_login_admin()  # Inicia a sessão do admin automaticamente
     app = MainWindow()
-    # Força a aplicação a iniciar maximizada
-    app.state('zoomed')
+
+    # A forma mais robusta de maximizar: espera a janela ser "mapeada" na tela
+    # e então aplica o estado 'zoomed'. Isso evita problemas de timing.
+    def maximize_on_map(event):
+        app.state('zoomed')
+    app.bind("<Map>", maximize_on_map)
+
     app.mainloop()
