@@ -2,4 +2,7 @@
 customtkinter==5.2.2
 reportlab>=4.0.0
 fpdf>=1.7.2
+<<<<<<< HEAD
 pytz>=2023.3
+=======
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18

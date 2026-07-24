@@ -3,14 +3,20 @@ from tkinter import messagebox
 from erp_frontend.components.table import TableComponent
 from erp_backend.services import vehicle_service
 from .vehicle_modal import VehicleModal
+<<<<<<< HEAD
 from erp_frontend import theme
+=======
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
 
 class CustomerVehiclesModal(ctk.CTkToplevel):
     def __init__(self, master, customer_id, customer_name):
         super().__init__(master)
         self.customer_id = customer_id
         self.customer_name = customer_name
+<<<<<<< HEAD
         self.configure(fg_color=theme.BG)
+=======
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
 
         self.title(f"Veículos de {self.customer_name}")
         self.transient(master)
@@ -38,10 +44,17 @@ class CustomerVehiclesModal(ctk.CTkToplevel):
         actions_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         actions_frame.pack(fill="x", pady=(0, 10))
 
+<<<<<<< HEAD
         btn_new = ctk.CTkButton(actions_frame, text="[ NOVO VEÍCULO ]", command=self.new_vehicle, **theme.btn_primary())
         btn_new.pack(side="left", padx=5)
 
         btn_edit = ctk.CTkButton(actions_frame, text="[ EDITAR VEÍCULO ]", command=self.edit_selected_vehicle, **theme.btn_secondary())
+=======
+        btn_new = ctk.CTkButton(actions_frame, text="[ NOVO VEÍCULO ]", font=("Roboto", 14, "bold"), command=self.new_vehicle)
+        btn_new.pack(side="left", padx=5)
+
+        btn_edit = ctk.CTkButton(actions_frame, text="[ EDITAR VEÍCULO ]", font=("Roboto", 14, "bold"), fg_color="#f39c12", hover_color="#d68910", command=self.edit_selected_vehicle)
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         btn_edit.pack(side="left", padx=5)
 
         columns = ("PLACA", "MARCA", "MODELO", "ANO", "COR", "KM ATUAL")
@@ -56,6 +69,10 @@ class CustomerVehiclesModal(ctk.CTkToplevel):
         self.table.bind("<Double-1>", lambda e: self.edit_selected_vehicle())
 
     def load_vehicles(self):
+<<<<<<< HEAD
+=======
+        """Carrega e exibe os veículos do cliente na tabela."""
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         for item in self.table.get_children():
             self.table.delete(item)
 
@@ -71,17 +88,35 @@ class CustomerVehiclesModal(ctk.CTkToplevel):
             ))
 
     def new_vehicle(self):
+<<<<<<< HEAD
         modal = VehicleModal(self, customer_id=self.customer_id)
         modal.get_input()
         self.load_vehicles()
 
     def edit_selected_vehicle(self):
+=======
+        """Abre a modal para cadastrar um novo veículo para este cliente."""
+        modal = VehicleModal(self, customer_id=self.customer_id)
+        modal.get_input()  # Espera a modal fechar
+        self.load_vehicles() # Atualiza a lista
+
+    def edit_selected_vehicle(self):
+        """Abre a modal para editar o veículo selecionado."""
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         selected = self.table.selection()
         if not selected:
             messagebox.showwarning("Aviso", "Selecione um veículo para editar.")
             return
+<<<<<<< HEAD
 
         vehicle_id = int(selected[0])
         modal = VehicleModal(self, customer_id=self.customer_id, vehicle_id=vehicle_id)
         modal.get_input()
         self.load_vehicles()
+=======
+        
+        vehicle_id = int(selected[0])
+        modal = VehicleModal(self, customer_id=self.customer_id, vehicle_id=vehicle_id)
+        modal.get_input() # Espera a modal fechar
+        self.load_vehicles() # Atualiza a lista
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18

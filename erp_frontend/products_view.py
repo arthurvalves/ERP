@@ -2,16 +2,26 @@ import customtkinter as ctk
 from tkinter import messagebox, Menu
 from erp_frontend.components.table import TableComponent
 from erp_backend.utils.db import get_connection
+<<<<<<< HEAD
 from erp_frontend import theme
+=======
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
 
 class ProductModal(ctk.CTkToplevel):
     def __init__(self, master, product_id=None, initial_data=None, on_save=None):
         super().__init__(master)
+<<<<<<< HEAD
         self.title("Editar Produto" if product_id else "Novo Produto")
         self.configure(fg_color=theme.BG)
         self.transient(master)
         self.grab_set()
 
+=======
+        self.title("Editar Produto" if product_id else "Novo Produto") # Corrigido
+        self.transient(master)
+        self.grab_set()
+        
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.product_id = product_id
         self.initial_data = initial_data or {}
         self.on_save = on_save
@@ -32,6 +42,7 @@ class ProductModal(ctk.CTkToplevel):
         y = (screen_height // 2) - (height // 2)
         self.geometry(f'{width}x{height}+{x}+{y}')
         self.resizable(False, False)
+<<<<<<< HEAD
 
     def get_categorias(self):
         return [
@@ -116,17 +127,127 @@ class ProductModal(ctk.CTkToplevel):
         self.ent_margem.pack(fill="x")
         self.ent_margem.bind("<KeyRelease>", self.on_margin_change)
 
+=======
+    
+    def get_categorias(self):
+        # Substituído para usar uma lista fixa e padronizada, garantindo consistência.
+        return [
+            "Motor",
+            "Alimentação",
+            "Ignição",
+            "Arrefecimento",
+            "Lubrificação",
+            "Admissão e Escape",
+            "Transmissão",
+            "Freios",
+            "Suspensão",
+            "Direção",
+            "Rodas e Cubos",
+            "Sistema Elétrico",
+            "Iluminação",
+            "Sensores e Eletrônica",
+            "Climatização",
+            "Carroceria",
+            "Vidros",
+            "Limpadores",
+            "Interior",
+            "Fechaduras e Segurança",
+            "Borrachas e Vedação",
+            "Fixação",
+            "Fluidos e Produtos Químicos",
+            "Acessórios"
+        ]
+    
+    def setup_ui(self):
+        self.frame = ctk.CTkFrame(self)
+        self.frame.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        ctk.CTkLabel(self.frame, text="Categoria:", font=("Roboto", 12)).pack(anchor="w")
+        self.cb_categoria = ctk.CTkOptionMenu(self.frame, values=self.get_categorias()) 
+        self.cb_categoria.pack(fill="x", pady=(0, 10))
+        
+        self.cb_categoria.configure(command=self.aplicar_margem_categoria)
+        
+        ctk.CTkLabel(self.frame, text="Nome do Produto:", font=("Roboto", 14, "bold")).pack(anchor="w", pady=(10, 0))
+        self.ent_nome = ctk.CTkEntry(self.frame, font=("Roboto", 14), width=400)
+        self.ent_nome.pack(fill="x", pady=(0, 10))
+        
+        row1 = ctk.CTkFrame(self.frame, fg_color="transparent")
+        row1.pack(fill="x", pady=5)
+        
+        f_sku = ctk.CTkFrame(row1, fg_color="transparent")
+        f_sku.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        ctk.CTkLabel(f_sku, text="SKU / Referência:", font=("Roboto", 12)).pack(anchor="w")
+        self.ent_sku = ctk.CTkEntry(f_sku, font=("Roboto", 14))
+        self.ent_sku.pack(fill="x")
+        
+        f_ean = ctk.CTkFrame(row1, fg_color="transparent")
+        f_ean.pack(side="left", fill="x", expand=True, padx=(5, 0))
+        ctk.CTkLabel(f_ean, text="EAN:", font=("Roboto", 12)).pack(anchor="w")
+        self.ent_ean = ctk.CTkEntry(f_ean, font=("Roboto", 14))
+        self.ent_ean.pack(fill="x")
+        
+        row1_5 = ctk.CTkFrame(self.frame, fg_color="transparent")
+        row1_5.pack(fill="x", pady=5)
+        
+        f_cfop = ctk.CTkFrame(row1_5, fg_color="transparent")
+        f_cfop.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        ctk.CTkLabel(f_cfop, text="CFOP Padrão:", font=("Roboto", 12)).pack(anchor="w")
+        self.ent_cfop = ctk.CTkEntry(f_cfop, font=("Roboto", 14))
+        self.ent_cfop.pack(fill="x")
+        
+        f_tipo = ctk.CTkFrame(row1_5, fg_color="transparent")
+        f_tipo.pack(side="left", fill="x", expand=True, padx=(5, 0))
+        ctk.CTkLabel(f_tipo, text="Tipo de Item:", font=("Roboto", 12)).pack(anchor="w")
+        self.cb_tipo = ctk.CTkOptionMenu(f_tipo, values=["Produto", "Serviço"])
+        self.cb_tipo.pack(fill="x")
+        
+        ctk.CTkLabel(self.frame, text="Custo Unitário (R$):", font=("Roboto", 14, "bold")).pack(anchor="w", pady=(15, 0))
+        self.ent_custo = ctk.CTkEntry(self.frame, font=("Roboto", 14), width=200)
+        self.ent_custo.pack(anchor="w", pady=(0, 10))
+        self.ent_custo.bind("<KeyRelease>", self.on_cost_change)
+        
+        row2 = ctk.CTkFrame(self.frame, fg_color="transparent")
+        row2.pack(fill="x", pady=15)
+        
+        f_atacado = ctk.CTkFrame(row2, fg_color="transparent")
+        f_atacado.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        ctk.CTkLabel(f_atacado, text="Preço Atacado (R$):", font=("Roboto", 14, "bold"), text_color="#f39c12").pack(anchor="w")
+        self.ent_atacado = ctk.CTkEntry(f_atacado, font=("Roboto", 16, "bold"))
+        self.ent_atacado.pack(fill="x")
+        
+        f_preco_container = ctk.CTkFrame(row2, fg_color="transparent")
+        f_preco_container.pack(side="left", fill="x", expand=True, padx=(5, 0))
+        
+        ctk.CTkLabel(f_preco_container, text="Preço Varejo (R$):", font=("Roboto", 16, "bold"), text_color="#2ecc71").pack(anchor="w")
+        self.ent_preco = ctk.CTkEntry(f_preco_container, font=("Roboto", 24, "bold"), text_color="#ffffff")
+        self.ent_preco.pack(fill="x", pady=(0, 10))
+        self.ent_preco.bind("<KeyRelease>", self.on_price_change)
+        
+        ctk.CTkLabel(f_preco_container, text="Margem Lucro (%):", font=("Roboto", 12, "bold"), text_color="#3498db").pack(anchor="w")
+        self.ent_margem = ctk.CTkEntry(f_preco_container, font=("Roboto", 14, "bold"))
+        self.ent_margem.pack(fill="x")
+        self.ent_margem.bind("<KeyRelease>", self.on_margin_change)
+
+        # Novos campos de estoque
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         row3 = ctk.CTkFrame(self.frame, fg_color="transparent")
         row3.pack(fill="x", pady=15)
 
         f_min_stock = ctk.CTkFrame(row3, fg_color="transparent")
         f_min_stock.pack(side="left", fill="x", expand=True, padx=(0, 5))
+<<<<<<< HEAD
         ctk.CTkLabel(f_min_stock, text="Estoque Mínimo:", font=theme.font_body(12), text_color=theme.TEXT_MUTED).pack(anchor="w")
         self.ent_min_stock = ctk.CTkEntry(f_min_stock, font=theme.font_body(14), fg_color=theme.CARD, border_color=theme.SECONDARY)
+=======
+        ctk.CTkLabel(f_min_stock, text="Estoque Mínimo:", font=("Roboto", 12)).pack(anchor="w")
+        self.ent_min_stock = ctk.CTkEntry(f_min_stock, font=("Roboto", 14))
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.ent_min_stock.pack(fill="x")
 
         f_max_stock = ctk.CTkFrame(row3, fg_color="transparent")
         f_max_stock.pack(side="left", fill="x", expand=True, padx=(5, 0))
+<<<<<<< HEAD
         ctk.CTkLabel(f_max_stock, text="Estoque Máximo:", font=theme.font_body(12), text_color=theme.TEXT_MUTED).pack(anchor="w")
         self.ent_max_stock = ctk.CTkEntry(f_max_stock, font=theme.font_body(14), fg_color=theme.CARD, border_color=theme.SECONDARY)
         self.ent_max_stock.pack(fill="x")
@@ -136,17 +257,33 @@ class ProductModal(ctk.CTkToplevel):
 
         ctk.CTkButton(footer, text="SALVAR", command=self.save, **theme.btn_primary(font=theme.font_bold(16))).pack(side="right", padx=5)
         ctk.CTkButton(footer, text="CANCELAR", command=self.destroy, **theme.btn_danger()).pack(side="right", padx=5)
+=======
+        ctk.CTkLabel(f_max_stock, text="Estoque Máximo:", font=("Roboto", 12)).pack(anchor="w")
+        self.ent_max_stock = ctk.CTkEntry(f_max_stock, font=("Roboto", 14))
+        self.ent_max_stock.pack(fill="x")
+        
+        footer = ctk.CTkFrame(self.frame, fg_color="transparent")
+        footer.pack(fill="x", side="bottom", pady=20)
+        
+        ctk.CTkButton(footer, text="SALVAR", font=("Roboto", 16, "bold"), fg_color="#2ecc71", hover_color="#27ae60", command=self.save).pack(side="right", padx=5)
+        ctk.CTkButton(footer, text="CANCELAR", font=("Roboto", 16), fg_color="#e74c3c", hover_color="#c0392b", command=self.destroy).pack(side="right", padx=5)
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
 
     def aplicar_margem_categoria(self, nome_categoria):
         try:
             custo = float(self.ent_custo.get().replace(",", "."))
             if custo <= 0: return
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
             conn = get_connection()
             cur = conn.cursor()
             cur.execute("SELECT margem_padrao FROM categories WHERE nome = ?", (nome_categoria,))
             row = cur.fetchone()
             conn.close()
+<<<<<<< HEAD
 
             if row and row['margem_padrao']:
                 margem = float(row['margem_padrao'])
@@ -156,6 +293,18 @@ class ProductModal(ctk.CTkToplevel):
                 self.ent_preco.insert(0, f"{novo_preco:.2f}")
         except ValueError:
             pass
+=======
+            
+            if row and row['margem_padrao']:
+                margem = float(row['margem_padrao'])
+                novo_preco = custo * (1 + (margem / 100))
+                
+                # Atualiza o campo de Preço de Venda automaticamente
+                self.ent_preco.delete(0, 'end')
+                self.ent_preco.insert(0, f"{novo_preco:.2f}")
+        except ValueError:
+            pass # Ignora se o custo estiver vazio ou inválido no momento
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
 
     def load_data(self):
         if not self.product_id:
@@ -167,20 +316,32 @@ class ProductModal(ctk.CTkToplevel):
             self.ent_min_stock.insert(0, f"{self.initial_data.get('estoque_minimo', 0.0):.2f}")
             self.ent_max_stock.insert(0, f"{self.initial_data.get('estoque_maximo', 0.0):.2f}")
             self.cb_tipo.set("Serviço" if self.initial_data.get('is_servico') else "Produto")
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
             custo = self.initial_data.get('custo', 0.0)
             self.ent_custo.insert(0, f"{custo:.2f}")
             self.ent_preco.insert(0, "0.00")
             self.ent_margem.insert(0, "0.00")
             self._update_margin_color(0.0)
             return
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         conn = get_connection()
         cur = conn.cursor()
         cur.execute("SELECT * FROM products WHERE id = ?", (self.product_id,))
         row = cur.fetchone()
         conn.close()
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         if row:
             self.ent_nome.insert(0, row['nome'] or "")
             self.ent_sku.insert(0, row['sku'] or "")
@@ -190,18 +351,31 @@ class ProductModal(ctk.CTkToplevel):
             self.ent_max_stock.insert(0, f"{row['estoque_maximo'] or 0.0:.2f}")
             self.ent_atacado.insert(0, f"{row['preco_atacado'] or 0.0:.2f}")
             self.cb_tipo.set("Serviço" if row['is_servico'] else "Produto")
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
             custo = row['custo'] or 0.0
             preco = row['preco_venda'] or 0.0
             self.ent_custo.insert(0, f"{custo:.2f}")
             self.ent_preco.insert(0, f"{preco:.2f}")
             self.on_price_change()
+<<<<<<< HEAD
 
     def _update_margin_color(self, margem: float):
         if margem < 0:
             self.ent_margem.configure(text_color=theme.DANGER)
         else:
             self.ent_margem.configure(text_color=theme.TEXT)
+=======
+        
+    def _update_margin_color(self, margem: float):
+        if margem < 0:
+            self.ent_margem.configure(text_color="#e74c3c")
+        else:
+            self.ent_margem.configure(text_color="#ffffff")
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
 
     def on_cost_change(self, event=None):
         self.on_margin_change()
@@ -244,7 +418,11 @@ class ProductModal(ctk.CTkToplevel):
         cfop = self.ent_cfop.get().strip()
         is_servico = 1 if self.cb_tipo.get() == "Serviço" else 0
         categoria_nome = self.cb_categoria.get()
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         try:
             custo = float(self.ent_custo.get().replace(",", "."))
             preco = float(self.ent_preco.get().replace(",", "."))
@@ -255,6 +433,7 @@ class ProductModal(ctk.CTkToplevel):
             messagebox.showerror("Erro", "Valores numéricos inválidos.")
             return
 
+<<<<<<< HEAD
         if not all(c.isalnum() or c.isspace() for c in nome):
             messagebox.showerror("Erro de Validação", "O nome do produto deve conter apenas letras, números e espaços.")
             return
@@ -266,6 +445,21 @@ class ProductModal(ctk.CTkToplevel):
         conn = get_connection()
         cur = conn.cursor()
 
+=======
+        # Validação para o nome do produto
+        if not all(c.isalnum() or c.isspace() for c in nome):
+            messagebox.showerror("Erro de Validação", "O nome do produto deve conter apenas letras, números e espaços.")
+            return
+            
+        if not nome:
+            messagebox.showerror("Erro", "Nome é obrigatório.")
+            return
+            
+        conn = get_connection()
+        cur = conn.cursor()
+        
+        # Busca o ID da categoria selecionada
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         categoria_id = None
         if categoria_nome:
             cur.execute("SELECT id FROM categories WHERE nome = ?", (categoria_nome,))
@@ -296,21 +490,34 @@ class ProductModal(ctk.CTkToplevel):
 
 class ProductsView(ctk.CTkFrame):
     def __init__(self, master, app_window, **kwargs):
+<<<<<<< HEAD
         super().__init__(master, fg_color=theme.BG, **kwargs)
+=======
+        super().__init__(master, fg_color="#1e1e1e", **kwargs)
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.app_window = app_window
         self.setup_ui()
         self.load_data()
         self.bind_shortcuts()
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
     def bind_shortcuts(self):
         self.app_window.bind("<F2>", lambda e: self.edit_selected())
         self.app_window.bind("<F5>", lambda e: self.load_data())
         self.app_window.bind("<F6>", lambda e: self.import_nfe())
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
     def unbind_shortcuts(self):
         self.app_window.unbind("<F2>")
         self.app_window.unbind("<F5>")
         self.app_window.unbind("<F6>")
+<<<<<<< HEAD
 
     def destroy(self):
         self.unbind_shortcuts()
@@ -360,6 +567,54 @@ class ProductsView(ctk.CTkFrame):
         btn_import = ctk.CTkButton(actions_frame, text="[F6] IMPORTAR NF-e", command=self.import_nfe, **theme.btn_success())
         btn_import.pack(side="right", padx=5)
 
+=======
+        
+    def destroy(self):
+        self.unbind_shortcuts()
+        super().destroy()
+        
+    def setup_ui(self):
+        top_frame = ctk.CTkFrame(self, fg_color="transparent")
+        top_frame.pack(fill="x", padx=20, pady=10)
+        
+        search_frame = ctk.CTkFrame(top_frame, fg_color="transparent")
+        search_frame.pack(side="left", fill="x", expand=True)
+        
+        self.search_entry = ctk.CTkEntry(search_frame, placeholder_text="🔎 BUSCA: NOME / SKU / EAN / FORNECEDOR...", height=40, font=("Roboto", 16))
+        self.search_entry.pack(fill="x", padx=(0, 20))
+        self.search_entry.bind("<KeyRelease>", self.on_search)
+        
+        summary_frame = ctk.CTkFrame(top_frame, fg_color="#2b2b2b", corner_radius=8)
+        summary_frame.pack(side="right", padx=10)
+        
+        self.lbl_total_prod = ctk.CTkLabel(summary_frame, text="PRODUTOS: 0", font=("Roboto", 14, "bold"))
+        self.lbl_total_prod.pack(side="left", padx=15, pady=10)
+        
+        self.lbl_critical_stock = ctk.CTkLabel(summary_frame, text="ESTOQUE CRÍTICO: 0", font=("Roboto", 14, "bold"), text_color="#e74c3c")
+        self.lbl_critical_stock.pack(side="left", padx=15, pady=10)
+        
+        self.lbl_total_value = ctk.CTkLabel(summary_frame, text="VALOR: R$ 0.00", font=("Roboto", 14, "bold"), text_color="#2ecc71")
+        self.lbl_total_value.pack(side="left", padx=15, pady=10)
+        
+        actions_frame = ctk.CTkFrame(self, fg_color="transparent")
+        actions_frame.pack(fill="x", padx=20, pady=(0, 10))
+        
+        btn_new = ctk.CTkButton(actions_frame, text="[ NOVO ]", font=("Roboto", 14, "bold"), command=self.new_product)
+        btn_new.pack(side="left", padx=5)
+        
+        btn_edit = ctk.CTkButton(actions_frame, text="[F2] EDITAR", font=("Roboto", 14, "bold"), fg_color="#f39c12", hover_color="#d68910", command=self.edit_selected)
+        btn_edit.pack(side="left", padx=5)
+        
+        btn_refresh = ctk.CTkButton(actions_frame, text="[F5] ATUALIZAR", font=("Roboto", 14, "bold"), fg_color="#3498db", hover_color="#2980b9", command=self.load_data)
+        btn_refresh.pack(side="left", padx=5)
+
+        btn_recalc = ctk.CTkButton(actions_frame, text="[ RECALCULAR ]", font=("Roboto", 14, "bold"), fg_color="#9b59b6", hover_color="#8e44ad", command=self.recalc_stock)
+        btn_recalc.pack(side="left", padx=5)
+        
+        btn_import = ctk.CTkButton(actions_frame, text="[F6] IMPORTAR NF-e", font=("Roboto", 14, "bold"), fg_color="#2ecc71", hover_color="#27ae60", command=self.import_nfe)
+        btn_import.pack(side="right", padx=5)
+        
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         columns = ("NOME", "SKU", "EAN", "ESTOQUE", "CUSTO", "PREÇO", "STATUS")
         self.table = TableComponent(self, columns, style="Products.Treeview")
         self.table.column("NOME", width=350, anchor="w")
@@ -369,6 +624,7 @@ class ProductsView(ctk.CTkFrame):
         self.table.column("CUSTO", width=100)
         self.table.column("PREÇO", width=100)
         self.table.column("STATUS", width=120)
+<<<<<<< HEAD
 
         self.table.tag_configure("ok", foreground=theme.SUCCESS)
         self.table.tag_configure("low", foreground=theme.PRIMARY)
@@ -380,14 +636,34 @@ class ProductsView(ctk.CTkFrame):
         self.table.bind("<Button-3>", self._show_context_menu)
         self._create_context_menu()
 
+=======
+        
+        self.table.tag_configure("ok", foreground="#2ecc71")
+        self.table.tag_configure("low", foreground="#f1c40f")
+        self.table.tag_configure("empty", foreground="#e74c3c")
+        
+        self.table.pack(fill="both", expand=True, padx=20, pady=10)
+        self.table.bind("<Double-1>", lambda e: self.edit_selected())
+        self.table.bind("<Return>", lambda e: self.edit_selected())
+        self.table.bind("<Button-3>", self._show_context_menu) # Botão direito
+        self._create_context_menu()
+        
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
     def load_data(self, event=None):
         query = self.search_entry.get().strip()
         for item in self.table.get_children():
             self.table.delete(item)
+<<<<<<< HEAD
 
         conn = get_connection()
         cur = conn.cursor()
 
+=======
+            
+        conn = get_connection()
+        cur = conn.cursor()
+        
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         sql = """
             SELECT p.id, p.nome, p.sku, p.codigo_barras, p.estoque_atual, p.custo, p.preco_venda, s.razao_social
             FROM products p
@@ -398,6 +674,7 @@ class ProductsView(ctk.CTkFrame):
             q = f"%{query}%"
             sql += " WHERE p.nome LIKE ? OR p.sku LIKE ? OR p.codigo_barras LIKE ? OR s.razao_social LIKE ?"
             params = (q, q, q, q)
+<<<<<<< HEAD
 
         sql += " ORDER BY p.nome LIMIT 100"
         cur.execute(sql, params)
@@ -416,13 +693,37 @@ class ProductsView(ctk.CTkFrame):
             est = row['estoque_atual'] or 0.0
             custo = row['custo'] or 0.0
 
+=======
+        
+        sql += " ORDER BY p.nome LIMIT 100"
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+        
+        cur.execute("SELECT COUNT(id) FROM products")
+        total_prod = cur.fetchone()[0] or 0
+        
+        cur.execute("SELECT COUNT(id) FROM products WHERE estoque_atual <= 5")
+        critical = cur.fetchone()[0] or 0
+        
+        cur.execute("SELECT SUM(estoque_atual * custo) FROM products WHERE estoque_atual > 0")
+        total_val = cur.fetchone()[0] or 0.0
+        
+        for row in rows:
+            est = row['estoque_atual'] or 0.0
+            custo = row['custo'] or 0.0
+            
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
             if est <= 0:
                 status, tag = "SEM ESTOQUE", "empty"
             elif est <= 5:
                 status, tag = "BAIXO", "low"
             else:
                 status, tag = "OK", "ok"
+<<<<<<< HEAD
 
+=======
+                
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
             self.table.insert("", "end", iid=str(row['id']), values=(
                 row['nome'],
                 row['sku'] or "--",
@@ -432,6 +733,7 @@ class ProductsView(ctk.CTkFrame):
                 f"R$ {row['preco_venda'] or 0.0:.2f}",
                 status
             ), tags=(tag,))
+<<<<<<< HEAD
 
         conn.close()
 
@@ -439,13 +741,26 @@ class ProductsView(ctk.CTkFrame):
         self.lbl_critical_stock.configure(text=f"ESTOQUE CRÍTICO: {critical}")
         self.lbl_total_value.configure(text=f"VALOR: R$ {total_val:.2f}")
 
+=======
+            
+        conn.close()
+        
+        self.lbl_total_prod.configure(text=f"PRODUTOS: {total_prod}")
+        self.lbl_critical_stock.configure(text=f"ESTOQUE CRÍTICO: {critical}")
+        self.lbl_total_value.configure(text=f"VALOR: R$ {total_val:.2f}")
+        
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
     def on_search(self, event):
         self.load_data()
 
     def _create_context_menu(self):
+<<<<<<< HEAD
         self.context_menu = Menu(self.table, tearoff=0, font=theme.font_body(12),
                                   bg=theme.CARD, fg=theme.TEXT, activebackground=theme.PRIMARY,
                                   activeforeground=theme.PRIMARY_FOREGROUND)
+=======
+        self.context_menu = Menu(self.table, tearoff=0, font=("Roboto", 12))
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.context_menu.add_command(label="Novo Produto", command=self.new_product)
         self.context_menu.add_command(label="Editar Produto Selecionado", command=self.edit_selected)
         self.context_menu.add_separator()
@@ -486,6 +801,15 @@ class ProductsView(ctk.CTkFrame):
                 self.load_data()
             except ImportError:
                 messagebox.showerror("Erro", "Módulo de reconciliação não disponível.")
+<<<<<<< HEAD
 
     def on_search(self, event):
         self.load_data(self.search_entry.get().strip())
+=======
+            
+    # Nota: A função on_search já está definida corretamente mais acima na classe (linha 204).
+    # O on_search duplicado e as chamadas soltas do cursor (cur) foram completamente removidas.
+        
+    def on_search(self, event):
+        self.load_data(self.search_entry.get().strip())
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18

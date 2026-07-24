@@ -1,5 +1,8 @@
 import customtkinter as ctk
+<<<<<<< HEAD
 from erp_frontend import theme
+=======
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
 
 
 class InputBarScanner(ctk.CTkFrame):
@@ -8,11 +11,15 @@ class InputBarScanner(ctk.CTkFrame):
         self.on_submit = on_submit
         self.keep_focus_active = True
 
+<<<<<<< HEAD
         self.entry = ctk.CTkEntry(
             self, placeholder_text="LEITOR DE CÓDIGO DE BARRAS (FOCO)", height=48,
             font=(theme.FONT_FAMILY, 20), fg_color=theme.CARD, border_color=theme.PRIMARY,
             border_width=2, text_color=theme.TEXT,
         )
+=======
+        self.entry = ctk.CTkEntry(self, placeholder_text="LEITOR DE CÓDIGO DE BARRAS (FOCO)", height=48, font=("Roboto", 20))
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.entry.pack(side="top", fill="x")
         self.entry.bind("<Return>", self._handle_submit)
         self.entry.bind("<FocusOut>", self._restore_focus)
@@ -33,7 +40,11 @@ class InputBarScanner(ctk.CTkFrame):
             self.on_submit(value)
         self.entry.delete(0, "end")
         self._focus_entry()
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
     def _force_focus(self):
             if not self.keep_focus_active:
                 return

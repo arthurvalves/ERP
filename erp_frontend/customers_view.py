@@ -4,11 +4,18 @@ from erp_frontend.components.table import TableComponent
 from erp_backend.services import customer_service
 from erp_frontend.customer_modal import CustomerModal
 from erp_frontend.modals.customer_vehicle_modal import CustomerVehiclesModal
+<<<<<<< HEAD
 from erp_frontend import theme
 
 class CustomersView(ctk.CTkFrame):
     def __init__(self, master, app_window, **kwargs):
         super().__init__(master, fg_color=theme.BG, **kwargs)
+=======
+
+class CustomersView(ctk.CTkFrame):
+    def __init__(self, master, app_window, **kwargs):
+        super().__init__(master, fg_color="#1e1e1e", **kwargs)
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.app_window = app_window
         self.setup_ui()
         self.load_data()
@@ -18,14 +25,19 @@ class CustomersView(ctk.CTkFrame):
         top_frame = ctk.CTkFrame(self, fg_color="transparent")
         top_frame.pack(fill="x", padx=20, pady=10)
 
+<<<<<<< HEAD
         self.search_entry = ctk.CTkEntry(top_frame, placeholder_text="🔎 BUSCA: NOME / CPF / CNPJ...", height=40,
                                           font=theme.font_body(16), fg_color=theme.CARD, border_color=theme.SECONDARY)
+=======
+        self.search_entry = ctk.CTkEntry(top_frame, placeholder_text="🔎 BUSCA: NOME / CPF / CNPJ...", height=40, font=("Roboto", 16))
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.search_entry.pack(side="left", fill="x", expand=True, padx=(0, 20))
         self.search_entry.bind("<KeyRelease>", lambda e: self.load_data())
 
         actions_frame = ctk.CTkFrame(self, fg_color="transparent")
         actions_frame.pack(fill="x", padx=20, pady=(0, 10))
 
+<<<<<<< HEAD
         btn_new = ctk.CTkButton(actions_frame, text="[ NOVO CLIENTE ]", command=self.new_customer, **theme.btn_primary())
         btn_new.pack(side="left", padx=5)
 
@@ -43,6 +55,24 @@ class CustomersView(ctk.CTkFrame):
                                      **theme.btn_secondary(fg_color=theme.INFO, hover_color="#2563eb", text_color="#ffffff"))
         btn_refresh.pack(side="left", padx=5)
 
+=======
+        btn_new = ctk.CTkButton(actions_frame, text="[ NOVO CLIENTE ]", font=("Roboto", 14, "bold"), command=self.new_customer)
+        btn_new.pack(side="left", padx=5)
+
+        btn_edit = ctk.CTkButton(actions_frame, text="[F2] EDITAR", font=("Roboto", 14, "bold"), fg_color="#f39c12", hover_color="#d68910", command=self.edit_selected)
+        btn_edit.pack(side="left", padx=5)
+
+        btn_vehicles = ctk.CTkButton(actions_frame, text="[ VER VEÍCULOS ]", font=("Roboto", 14, "bold"), fg_color="#2980b9", hover_color="#3498db", command=self.view_customer_vehicles)
+        btn_vehicles.pack(side="left", padx=5)
+
+        btn_delete = ctk.CTkButton(actions_frame, text="[DEL] DELETAR", font=("Roboto", 14, "bold"), fg_color="#e74c3c", hover_color="#c0392b", command=self.delete_selected)
+        btn_delete.pack(side="left", padx=5)
+
+        btn_refresh = ctk.CTkButton(actions_frame, text="[F5] ATUALIZAR", font=("Roboto", 14, "bold"), fg_color="#3498db", hover_color="#2980b9", command=self.load_data)
+        btn_refresh.pack(side="left", padx=5)
+
+
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         columns = ("NOME / RAZÃO SOCIAL", "CPF / CNPJ", "TELEFONE", "EMAIL", "ENDEREÇO")
         self.table = TableComponent(self, columns, style="Customers.Treeview")
         self.table.column("NOME / RAZÃO SOCIAL", width=350, anchor="w")
@@ -52,7 +82,11 @@ class CustomersView(ctk.CTkFrame):
         self.table.column("ENDEREÇO", width=400, anchor="w")
         self.table.pack(fill="both", expand=True, padx=20, pady=10)
         self.table.bind("<Double-1>", lambda e: self.edit_selected())
+<<<<<<< HEAD
         self.table.bind("<Button-3>", self._show_context_menu)
+=======
+        self.table.bind("<Button-3>", self._show_context_menu) # Botão direito
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self._create_context_menu()
 
     def bind_shortcuts(self):
@@ -70,9 +104,13 @@ class CustomersView(ctk.CTkFrame):
         super().destroy()
 
     def _create_context_menu(self):
+<<<<<<< HEAD
         self.context_menu = Menu(self.table, tearoff=0, font=(theme.FONT_FAMILY, 12),
                                   bg=theme.CARD, fg=theme.TEXT, activebackground=theme.PRIMARY,
                                   activeforeground=theme.PRIMARY_FOREGROUND)
+=======
+        self.context_menu = Menu(self.table, tearoff=0, font=("Roboto", 12))
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.context_menu.add_command(label="Novo Cliente", command=self.new_customer)
         self.context_menu.add_command(label="Editar Cliente Selecionado", command=self.edit_selected)
         self.context_menu.add_separator()
@@ -128,7 +166,11 @@ class CustomersView(ctk.CTkFrame):
         if not selected:
             messagebox.showwarning("Aviso", "Selecione um cliente para deletar.")
             return
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         customer_id = int(selected[0])
         customer_name = self.table.item(selected[0])['values'][0]
 
@@ -141,4 +183,8 @@ class CustomersView(ctk.CTkFrame):
             except ValueError as e:
                 messagebox.showerror("Erro ao Deletar", str(e))
             except Exception as e:
+<<<<<<< HEAD
                 messagebox.showerror("Erro Crítico", f"Ocorreu um erro inesperado: {e}")
+=======
+                messagebox.showerror("Erro Crítico", f"Ocorreu um erro inesperado: {e}")
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18

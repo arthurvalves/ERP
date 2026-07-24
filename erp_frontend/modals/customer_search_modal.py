@@ -3,7 +3,10 @@ import tkinter as tk
 import customtkinter as ctk
 
 from erp_backend.services import customer_service
+<<<<<<< HEAD
 from erp_frontend import theme
+=======
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
 
 
 class CustomerSearchModal(ctk.CTkToplevel):
@@ -11,7 +14,10 @@ class CustomerSearchModal(ctk.CTkToplevel):
         super().__init__(master)
         self.title("Buscar Cliente")
         self.geometry("700x500")
+<<<<<<< HEAD
         self.configure(fg_color=theme.BG)
+=======
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.transient(master)
         self.grab_set()
 
@@ -26,17 +32,27 @@ class CustomerSearchModal(ctk.CTkToplevel):
         top = ctk.CTkFrame(self, fg_color="transparent")
         top.pack(fill="x", padx=16, pady=16)
 
+<<<<<<< HEAD
         self.search_entry = ctk.CTkEntry(top, placeholder_text="Buscar por nome, CPF ou CNPJ",
                                           fg_color=theme.CARD, border_color=theme.SECONDARY)
+=======
+        self.search_entry = ctk.CTkEntry(top, placeholder_text="Buscar por nome, CPF ou CNPJ")
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.search_entry.pack(side="left", fill="x", expand=True)
         self.search_entry.bind("<KeyRelease>", lambda event: self._refresh_list())
         self.search_entry.bind("<Return>", lambda event: self._confirm())
 
+<<<<<<< HEAD
         ctk.CTkButton(top, text="Buscar", command=self._refresh_list, **theme.btn_primary()).pack(side="left", padx=(8, 0))
 
         self.listbox = tk.Listbox(self, height=15, bg=theme.CARD_ALT, fg=theme.TEXT,
                                    selectbackground=theme.PRIMARY, selectforeground=theme.PRIMARY_FOREGROUND,
                                    highlightthickness=0, bd=0)
+=======
+        ctk.CTkButton(top, text="Buscar", command=self._refresh_list).pack(side="left", padx=(8, 0))
+
+        self.listbox = tk.Listbox(self, height=15)
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.listbox.pack(fill="both", expand=True, padx=16, pady=(0, 12))
         self.listbox.bind("<Double-Button-1>", lambda event: self._confirm())
         self.listbox.bind("<Return>", lambda event: self._confirm())
@@ -44,8 +60,13 @@ class CustomerSearchModal(ctk.CTkToplevel):
         bottom = ctk.CTkFrame(self, fg_color="transparent")
         bottom.pack(fill="x", padx=16, pady=(0, 16))
 
+<<<<<<< HEAD
         ctk.CTkButton(bottom, text="Cancelar", command=self._close, **theme.btn_secondary()).pack(side="right")
         ctk.CTkButton(bottom, text="Selecionar", command=self._confirm, **theme.btn_primary()).pack(side="right", padx=(0, 8))
+=======
+        ctk.CTkButton(bottom, text="Cancelar", command=self._close).pack(side="right")
+        ctk.CTkButton(bottom, text="Selecionar", command=self._confirm).pack(side="right", padx=(0, 8))
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
 
     def _refresh_list(self):
         search_term = self.search_entry.get().strip()

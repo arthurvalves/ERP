@@ -85,9 +85,15 @@ def process_nfe_xml(xml_content: str):
                 if ean and 'SEM GTIN' in ean.upper(): ean = None
                 
                 cur.execute("""
+<<<<<<< HEAD
                     INSERT INTO products (sku, nome, nome_normalizado, codigo_barras, ncm, referencia, fornecedor_id, custo, estoque_atual)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
                 """, (sku, nome, nome_norm, ean, item['NCM'], item['cProd'], supplier_id, item['vUnCom']))
+=======
+                    INSERT INTO products (sku, nome, nome_normalizado, codigo_barras, ncm, referencia, fornecedor_id, custo, estoque_atual, cfop_padrao)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+                """, (sku, nome, nome_norm, ean, item['NCM'], item['cProd'], supplier_id, item['vUnCom'], item.get('CFOP', '')))
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
                 product_id = cur.lastrowid
                 old_stock = 0
                 old_cost = 0.0

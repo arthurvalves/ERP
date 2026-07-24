@@ -18,4 +18,8 @@ def get_current_user_id() -> int | None:
 def clear_session():
     """Limpa a sessão do usuário (logout)."""
     global _current_user
+<<<<<<< HEAD
     _current_user = None
+=======
+    _current_user = None
+>>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
