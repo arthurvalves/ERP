@@ -114,18 +114,27 @@ class NFeView(ctk.CTkFrame):
 
             # Adiciona a lógica para buscar a categoria adivinhada e passá-la para o modal
             conn = get_connection()
+            
+            # Busca o ID do fornecedor a partir do CNPJ da nota
+            sup_cnpj = self.current_parsed_data['supplier']['cnpj']
+            sup_row = conn.cursor().execute("SELECT id FROM suppliers WHERE cnpj = ?", (sup_cnpj,)).fetchone()
+            supplier_id = sup_row[0] if sup_row else None
+
             categoria_id = categorization_service.guess_category_id(item_data.get('NCM'), item_data.get('xProd'), conn=conn)
             conn.close()
 
             initial_data = {
                 'nome': item_data.get('xProd'),
                 'sku': item_data.get('cProd'),
+                'referencia': item_data.get('cProd'),   # <-- Adicionado
                 'codigo_barras': item_data.get('cEAN'),
                 'ncm': item_data.get('NCM'),
                 'custo': float(item_data.get('vUnCom', 0.0)),
                 'cfop_padrao': item_data.get('CFOP'),
                 'categoria_id': categoria_id,
+                'fornecedor_id': supplier_id, # <-- Adicionado
             }
+            
             ProductModal(self, initial_data=initial_data, on_save=self.run_validation)
 
     def import_nfe(self, event=None):

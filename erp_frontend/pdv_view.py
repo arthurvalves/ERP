@@ -241,8 +241,7 @@ class PDVView(ctk.CTkFrame):
         super().__init__(master, fg_color=theme.BG, **kwargs)
         self.app_window = app_window
         self.cart = []
-        self.setup_ui()
-        self.bind_shortcuts()
+
         columns = ("PRODUTO", "QTD", "UNIT", "DESC.", "SUBTOTAL")
         self.table = TableComponent(self, columns, style="PDV.Treeview")
         self.table.column("PRODUTO", width=400, anchor="w")
@@ -250,6 +249,9 @@ class PDVView(ctk.CTkFrame):
         self.table.column("UNIT", width=120)
         self.table.column("DESC.", width=100)
         self.table.column("SUBTOTAL", width=120)
+
+        self.setup_ui()
+        self.bind_shortcuts()
 
     def setup_ui(self):
         """Sets up the main UI components for the PDV view."""
@@ -259,7 +261,7 @@ class PDVView(ctk.CTkFrame):
         self.scanner = InputBarScanner(left_panel, on_submit=self.add_product_from_scanner)
         self.scanner.pack(fill="x", pady=(0, 10))
 
-        self.table.pack(fill="both", expand=True)
+        self.table.pack(in_=left_panel, fill="both", expand=True)
 
         right_panel = ctk.CTkFrame(self, width=350, **theme.card_frame_kwargs())
         right_panel.pack(side="right", fill="y", padx=(0, 10), pady=10)

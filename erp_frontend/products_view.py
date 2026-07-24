@@ -36,7 +36,7 @@ class ProductModal(ctk.CTkToplevel):
 
     def get_categorias(self):
         return [
-            "Motor", "Alimentação", "Ignição", "Arrefecimento", "Lubrificação",
+            "A Definir", "Motor", "Alimentação", "Ignição", "Arrefecimento", "Lubrificação",
             "Admissão e Escape", "Transmissão", "Freios", "Suspensão", "Direção",
             "Rodas e Cubos", "Sistema Elétrico", "Iluminação", "Sensores e Eletrônica",
             "Climatização", "Carroceria", "Vidros", "Limpadores", "Interior",
@@ -290,7 +290,7 @@ class ProductModal(ctk.CTkToplevel):
         conn = get_connection()
         cur = conn.cursor()
         
-        categoria_id = None
+        categoria_id = None # Default para nulo
         if categoria_nome:
             cur.execute("SELECT id FROM categories WHERE nome = ?", (categoria_nome,))
             cat_row = cur.fetchone()
@@ -310,8 +310,11 @@ class ProductModal(ctk.CTkToplevel):
                     nome_norm = normalize(nome)
                 except ImportError:
                     nome_norm = nome.upper()
-                cur.execute("INSERT INTO products (nome, nome_normalizado, sku, codigo_barras, ncm, custo, preco_venda, estoque_atual, cfop_padrao, preco_atacado, is_servico, estoque_minimo, estoque_maximo, categoria_id) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)",
-                            (nome, nome_norm, sku, ean, ncm, custo, preco, cfop, atacado, is_servico, min_stock, max_stock, categoria_id))
+                # Correção: Incluindo referencia e fornecedor_id no INSERT
+                referencia = self.initial_data.get('referencia')
+                fornecedor_id = self.initial_data.get('fornecedor_id')
+                cur.execute("INSERT INTO products (nome, nome_normalizado, sku, codigo_barras, ncm, referencia, fornecedor_id, custo, preco_venda, estoque_atual, cfop_padrao, preco_atacado, is_servico, estoque_minimo, estoque_maximo, categoria_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)",
+                            (nome, nome_norm, sku, ean, ncm, referencia, fornecedor_id, custo, preco, cfop, atacado, is_servico, min_stock, max_stock, categoria_id))
             conn.commit()
             if self.on_save:
                 self.on_save()
