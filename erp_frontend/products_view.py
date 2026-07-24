@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from tkinter import messagebox, Menu
 from erp_frontend.components.table import TableComponent
+from erp_backend.services import categorization_service
 from erp_backend.utils.db import get_connection
 from erp_frontend import theme
 
@@ -72,6 +73,12 @@ class ProductModal(ctk.CTkToplevel):
         ctk.CTkLabel(f_ean, text="EAN:", font=theme.font_body(12), text_color=theme.TEXT_MUTED).pack(anchor="w")
         self.ent_ean = ctk.CTkEntry(f_ean, font=theme.font_body(14), fg_color=theme.CARD, border_color=theme.SECONDARY)
         self.ent_ean.pack(fill="x")
+
+        f_ncm = ctk.CTkFrame(row1, fg_color="transparent")
+        f_ncm.pack(side="left", fill="x", expand=True, padx=(5, 0))
+        ctk.CTkLabel(f_ncm, text="NCM:", font=theme.font_body(12), text_color=theme.TEXT_MUTED).pack(anchor="w")
+        self.ent_ncm = ctk.CTkEntry(f_ncm, font=theme.font_body(14), fg_color=theme.CARD, border_color=theme.SECONDARY, state='readonly')
+        self.ent_ncm.pack(fill="x")
 
         row1_5 = ctk.CTkFrame(self.frame, fg_color="transparent")
         row1_5.pack(fill="x", pady=5)
@@ -160,6 +167,7 @@ class ProductModal(ctk.CTkToplevel):
             self.ent_nome.insert(0, self.initial_data.get('nome', ''))
             self.ent_sku.insert(0, self.initial_data.get('sku', ''))
             self.ent_ean.insert(0, self.initial_data.get('codigo_barras', ''))
+            self.ent_ncm.configure(state='normal'); self.ent_ncm.insert(0, self.initial_data.get('ncm', '')); self.ent_ncm.configure(state='readonly')
             self.ent_cfop.insert(0, self.initial_data.get('cfop_padrao', ''))
             self.ent_atacado.insert(0, f"{self.initial_data.get('preco_atacado', 0.0):.2f}")
             self.ent_min_stock.insert(0, f"{self.initial_data.get('estoque_minimo', 0.0):.2f}")
@@ -169,6 +177,16 @@ class ProductModal(ctk.CTkToplevel):
             custo = self.initial_data.get('custo', 0.0)
             self.ent_custo.insert(0, f"{custo:.2f}")
             self.ent_preco.insert(0, "0.00")
+
+            # Pré-seleciona a categoria se ela foi adivinhada na tela de NF-e
+            categoria_id = self.initial_data.get('categoria_id')
+            if categoria_id:
+                conn = get_connection()
+                cat_row = conn.cursor().execute("SELECT nome FROM categories WHERE id = ?", (categoria_id,)).fetchone()
+                conn.close()
+                if cat_row:
+                    self.cb_categoria.set(cat_row['nome'])
+
             self.ent_margem.insert(0, "0.00")
             self._update_margin_color(0.0)
             return
@@ -183,6 +201,7 @@ class ProductModal(ctk.CTkToplevel):
             self.ent_nome.insert(0, row['nome'] or "")
             self.ent_sku.insert(0, row['sku'] or "")
             self.ent_ean.insert(0, row['codigo_barras'] or "")
+            self.ent_ncm.configure(state='normal'); self.ent_ncm.insert(0, row['ncm'] or ""); self.ent_ncm.configure(state='readonly')
             self.ent_cfop.insert(0, row['cfop_padrao'] or "")
             self.ent_min_stock.insert(0, f"{row['estoque_minimo'] or 0.0:.2f}")
             self.ent_max_stock.insert(0, f"{row['estoque_maximo'] or 0.0:.2f}")
@@ -193,7 +212,13 @@ class ProductModal(ctk.CTkToplevel):
             preco = row['preco_venda'] or 0.0
             self.ent_custo.insert(0, f"{custo:.2f}")
             self.ent_preco.insert(0, f"{preco:.2f}")
-            self.on_price_change()
+
+            if row['categoria_id']:
+                cur.execute("SELECT nome FROM categories WHERE id = ?", (row['categoria_id'],))
+                cat_row = cur.fetchone()
+                if cat_row:
+                    self.cb_categoria.set(cat_row['nome'])
+        self.on_price_change()
 
     def _update_margin_color(self, margem: float):
         if margem < 0:
@@ -239,6 +264,7 @@ class ProductModal(ctk.CTkToplevel):
         nome = self.ent_nome.get().strip()
         sku = self.ent_sku.get().strip()
         ean = self.ent_ean.get().strip()
+        ncm = self.ent_ncm.cget('state') == 'normal' and self.ent_ncm.get().strip() or self.initial_data.get('ncm', '')
         cfop = self.ent_cfop.get().strip()
         is_servico = 1 if self.cb_tipo.get() == "Serviço" else 0
         categoria_nome = self.cb_categoria.get()
@@ -269,19 +295,23 @@ class ProductModal(ctk.CTkToplevel):
             cur.execute("SELECT id FROM categories WHERE nome = ?", (categoria_nome,))
             cat_row = cur.fetchone()
             if cat_row: categoria_id = cat_row['id']
+        
+        # Lógica de aprendizado: se o usuário definiu uma categoria e o produto tem NCM, o sistema aprende.
+        if categoria_id and ncm:
+            categorization_service.learn_ncm_category(ncm, categoria_id, conn=conn)
 
         try:
             if self.product_id:
-                cur.execute("UPDATE products SET nome=?, sku=?, codigo_barras=?, custo=?, preco_venda=?, cfop_padrao=?, preco_atacado=?, is_servico=?, estoque_minimo=?, estoque_maximo=?, categoria_id=? WHERE id=?",
-                            (nome, sku, ean, custo, preco, cfop, atacado, is_servico, min_stock, max_stock, categoria_id, self.product_id))
+                cur.execute("UPDATE products SET nome=?, sku=?, codigo_barras=?, ncm=?, custo=?, preco_venda=?, cfop_padrao=?, preco_atacado=?, is_servico=?, estoque_minimo=?, estoque_maximo=?, categoria_id=? WHERE id=?",
+                            (nome, sku, ean, ncm, custo, preco, cfop, atacado, is_servico, min_stock, max_stock, categoria_id, self.product_id))
             else:
                 try:
                     from erp_backend.core.normalizer import normalize
                     nome_norm = normalize(nome)
                 except ImportError:
                     nome_norm = nome.upper()
-                cur.execute("INSERT INTO products (nome, nome_normalizado, sku, codigo_barras, custo, preco_venda, estoque_atual, cfop_padrao, preco_atacado, is_servico, estoque_minimo, estoque_maximo, categoria_id) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)",
-                            (nome, nome_norm, sku, ean, custo, preco, cfop, atacado, is_servico, min_stock, max_stock, categoria_id))
+                cur.execute("INSERT INTO products (nome, nome_normalizado, sku, codigo_barras, ncm, custo, preco_venda, estoque_atual, cfop_padrao, preco_atacado, is_servico, estoque_minimo, estoque_maximo, categoria_id) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)",
+                            (nome, nome_norm, sku, ean, ncm, custo, preco, cfop, atacado, is_servico, min_stock, max_stock, categoria_id))
             conn.commit()
             if self.on_save:
                 self.on_save()
@@ -358,9 +388,10 @@ class ProductsView(ctk.CTkFrame):
         btn_import = ctk.CTkButton(actions_frame, text="[F6] IMPORTAR NF-e", command=self.import_nfe, **theme.btn_success())
         btn_import.pack(side="right", padx=5)
 
-        columns = ("NOME", "SKU", "EAN", "ESTOQUE", "CUSTO", "PREÇO", "STATUS")
+        columns = ("NOME", "CATEGORIA", "SKU", "EAN", "ESTOQUE", "CUSTO", "PREÇO", "STATUS")
         self.table = TableComponent(self, columns, style="Products.Treeview")
         self.table.column("NOME", width=350, anchor="w")
+        self.table.column("CATEGORIA", width=150, anchor="w")
         self.table.column("SKU", width=120)
         self.table.column("EAN", width=120)
         self.table.column("ESTOQUE", width=100)
@@ -372,6 +403,7 @@ class ProductsView(ctk.CTkFrame):
         self.table.tag_configure("low", foreground=theme.PRIMARY)
         self.table.tag_configure("empty", foreground=theme.DANGER)
 
+        self.table.tag_configure("sem_categoria", foreground=theme.WARNING)
         self.table.tag_configure("ok", foreground="#2ecc71")
         self.table.tag_configure("low", foreground="#f1c40f")
         self.table.tag_configure("empty", foreground="#e74c3c")
@@ -391,9 +423,10 @@ class ProductsView(ctk.CTkFrame):
         cur = conn.cursor()
 
         sql = """
-            SELECT p.id, p.nome, p.sku, p.codigo_barras, p.estoque_atual, p.custo, p.preco_venda, s.razao_social
+            SELECT p.id, p.nome, p.sku, p.codigo_barras, p.estoque_atual, p.custo, p.preco_venda, s.razao_social, c.nome as categoria_nome
             FROM products p
             LEFT JOIN suppliers s ON p.fornecedor_id = s.id
+            LEFT JOIN categories c ON p.categoria_id = c.id
         """
         params = ()
         if query:
@@ -416,7 +449,8 @@ class ProductsView(ctk.CTkFrame):
         
         for row in rows:
             est = row['estoque_atual'] or 0.0
-            custo = row['custo'] or 0.0
+            custo = row['custo'] or 0.0            
+            categoria = row['categoria_nome'] or "A CLASSIFICAR"
             
             if est <= 0:
                 status, tag = "SEM ESTOQUE", "empty"
@@ -424,16 +458,19 @@ class ProductsView(ctk.CTkFrame):
                 status, tag = "BAIXO", "low"
             else:
                 status, tag = "OK", "ok"
-
+            
+            tags = (tag, "sem_categoria" if not row['categoria_nome'] else "")
+            
             self.table.insert("", "end", iid=str(row['id']), values=(
                 row['nome'],
+                categoria,
                 row['sku'] or "--",
                 row['codigo_barras'] or "--",
                 f"{est:.3f}".rstrip('0').rstrip('.'),
                 f"R$ {custo:.2f}",
                 f"R$ {row['preco_venda'] or 0.0:.2f}",
                 status
-            ), tags=(tag,))
+            ), tags=tags)
 
         conn.close()
         

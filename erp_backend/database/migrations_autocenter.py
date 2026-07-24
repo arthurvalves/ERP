@@ -23,6 +23,16 @@ def run_autocenter_migrations():
         except sqlite3.OperationalError:
             pass # Coluna já existe
 
+    # Tabela de mapeamento NCM -> Categoria para auto-classificação
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS ncm_category_map (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ncm_prefix TEXT NOT NULL UNIQUE,
+            categoria_id INTEGER NOT NULL,
+            FOREIGN KEY(categoria_id) REFERENCES categories(id)
+        );
+    ''')
+
     # 8. Tabela de Catálogo de Serviços
     cur.execute('''
         CREATE TABLE IF NOT EXISTS services (

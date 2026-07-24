@@ -3,6 +3,7 @@ import sqlite3
 from erp_backend.utils.db import get_connection
 from erp_backend.core.nfe.nfe_xml_parser import parse_nfe_xml
 from erp_backend.services.matching_service import find_product_match
+from erp_backend.services import categorization_service
 from erp_backend.services.stock_service import record_movement
 from erp_backend.core.events.event_bus import emit
 
@@ -84,18 +85,22 @@ def process_nfe_xml(xml_content: str):
                 ean = item.get('cEAN')
                 if ean and 'SEM GTIN' in ean.upper(): ean = None
                 
+                # Tenta adivinhar a categoria antes de criar o produto
+                categoria_id = categorization_service.guess_category_id(item['NCM'], item['xProd'], conn=conn)
+
                 cur.execute("""
-                    INSERT INTO products (sku, nome, nome_normalizado, codigo_barras, ncm, referencia, fornecedor_id, custo, estoque_atual, cfop_padrao)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
-                """, (sku, nome, nome_norm, ean, item['NCM'], item['cProd'], supplier_id, item['vUnCom'], item.get('CFOP', '')))
+                    INSERT INTO products (sku, nome, nome_normalizado, codigo_barras, ncm, referencia, fornecedor_id, categoria_id, custo, estoque_atual, cfop_padrao)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+                """, (sku, nome, nome_norm, ean, item['NCM'], item['cProd'], supplier_id, categoria_id, item['vUnCom'], item.get('CFOP', '')))
                 product_id = cur.lastrowid
                 old_stock = 0
                 old_cost = 0.0
 
+                audit_payload = {"sku": sku, "nome": nome, "categoria_id": categoria_id, "fonte_categoria": "auto"}
                 cur.execute("""
                     INSERT INTO audit_log (entidade, entidade_id, acao, origem, payload)
                     VALUES ('product', ?, 'create', 'nfe_xml_import', ?)
-                """, (product_id, json.dumps({"sku": sku, "nome": nome})))
+                """, (product_id, json.dumps(audit_payload)))
             else:
                 product_id = matched_product['id']
                 old_cost = matched_product['custo']

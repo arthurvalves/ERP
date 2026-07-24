@@ -3,9 +3,10 @@ from tkinter import filedialog, messagebox
 import difflib
 import xml.etree.ElementTree as ET
 
-from erp_frontend.components.table import TableComponent
+from erp_frontend.components.table import TableComponent 
 from erp_backend.utils.db import get_connection
 
+from erp_backend.services import categorization_service, category_service
 from erp_backend.services.matching_service import find_product_match
 from erp_backend.core.nfe_processor import process_nfe_xml
 from erp_backend.core.nfe.nfe_xml_parser import parse_nfe_xml
@@ -45,16 +46,16 @@ class NFeView(ctk.CTkFrame):
         self.lbl_totais = ctk.CTkLabel(self.info_frame, text="EMISSÃO: --  |  TOTAL: --", font=theme.font_body(14), text_color=theme.TEXT_MUTED)
         self.lbl_totais.pack(anchor="w")
 
-        columns = ("PRODUTO", "CÓDIGO", "QTD", "CUSTO UN.", "CUSTO TOT.", "STATUS", "CONF.", "MARGEM")
+        columns = ("PRODUTO", "CATEGORIA", "CÓDIGO", "QTD", "CUSTO UN.", "CUSTO TOT.", "STATUS", "CONF.")
         self.table = TableComponent(self, columns)
         self.table.column("PRODUTO", width=300, anchor="w")
+        self.table.column("CATEGORIA", width=150, anchor="w")
         self.table.column("CÓDIGO", width=100)
         self.table.column("QTD", width=60)
         self.table.column("CUSTO UN.", width=100)
         self.table.column("CUSTO TOT.", width=100)
         self.table.column("STATUS", width=120)
         self.table.column("CONF.", width=60)
-        self.table.column("MARGEM", width=80)
 
         self.table.tag_configure("ok", foreground=theme.SUCCESS)
         self.table.tag_configure("novo", foreground=theme.PRIMARY)
@@ -111,12 +112,19 @@ class NFeView(ctk.CTkFrame):
         if self.current_parsed_data and item_index < len(self.current_parsed_data['items']):
             item_data = self.current_parsed_data['items'][item_index]
 
+            # Adiciona a lógica para buscar a categoria adivinhada e passá-la para o modal
+            conn = get_connection()
+            categoria_id = categorization_service.guess_category_id(item_data.get('NCM'), item_data.get('xProd'), conn=conn)
+            conn.close()
+
             initial_data = {
                 'nome': item_data.get('xProd'),
                 'sku': item_data.get('cProd'),
                 'codigo_barras': item_data.get('cEAN'),
+                'ncm': item_data.get('NCM'),
                 'custo': float(item_data.get('vUnCom', 0.0)),
                 'cfop_padrao': item_data.get('CFOP'),
+                'categoria_id': categoria_id,
             }
             ProductModal(self, initial_data=initial_data, on_save=self.run_validation)
 
@@ -201,11 +209,11 @@ class NFeView(ctk.CTkFrame):
         cur = conn.cursor()
         cur.execute("SELECT id, nome, nome_normalizado, codigo_barras, ncm, referencia, fornecedor_id, custo, estoque_atual, preco_venda FROM products")
         all_products = [dict(row) for row in cur.fetchall()]
+        all_categories = {c['id']: c['nome'] for c in category_service.get_all_categories(conn=conn)}
         cnpj = self.current_parsed_data['supplier']['cnpj']
         cur.execute("SELECT id FROM suppliers WHERE cnpj = ?", (cnpj,))
         sup = cur.fetchone()
         supplier_id = sup['id'] if sup else None
-        conn.close()
         for item in self.table.get_children(): self.table.delete(item)
         self.simulated_stats = {'items': 0, 'stock': 0, 'new': 0, 'div': 0, 'total_value': 0.0}
 
@@ -216,7 +224,6 @@ class NFeView(ctk.CTkFrame):
 
             v_un = float(item['vUnCom'])
             q_com = float(item['qCom'])
-            margem = "--"
 
             self.simulated_stats['items'] += 1
             self.simulated_stats['stock'] += q_com
@@ -224,26 +231,34 @@ class NFeView(ctk.CTkFrame):
             # --- LÓGICA DE STATUS E TAGS PARA A TABELA ---
             if not matched:
                 status, tag = "NOVO", "novo"
+                categoria_id = categorization_service.guess_category_id(item['NCM'], item['xProd'], conn=conn)
+                categoria_nome = all_categories.get(categoria_id, "A CLASSIFICAR")
                 self.simulated_stats['new'] += 1
             elif conf < 100:
                 status, tag = "REVISAR", "revisao"
+                categoria_nome = all_categories.get(matched.get('categoria_id'), "A CLASSIFICAR")
                 self.simulated_stats['div'] += 1
             else:
                 status, tag = "OK", "ok"
+                categoria_nome = all_categories.get(matched.get('categoria_id'), "A CLASSIFICAR")
+
+            tags = (tag, "revisao" if categoria_nome == "A CLASSIFICAR" else "")
 
             # --- INSERÇÃO DO ITEM NA TABELA (CORREÇÃO) ---
             self.table.insert("", "end", iid=str(idx), values=(
                 item['xProd'],
+                categoria_nome,
                 item['cProd'],
                 f"{q_com:.2f}",
                 f"R$ {v_un:.2f}",
                 f"R$ {v_un * q_com:.2f}",
                 status,
                 f"{conf}%",
-                margem
-            ), tags=(tag,))
+            ), tags=tags)
 
         self.btn_simulate.configure(state="normal")
+        # A conexão só deve ser fechada aqui, após ser usada por completo.
+        conn.close()
 
     def reset_state(self):
         self.current_xml_content = None
