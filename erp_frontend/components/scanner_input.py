@@ -8,16 +8,27 @@ class InputBarScanner(ctk.CTkFrame):
         self.on_submit = on_submit
         self.keep_focus_active = True
 
+        # Registra a função de validação
+        vcmd = (self.register(self._validate_input), '%P')
+
         self.entry = ctk.CTkEntry(
             self, placeholder_text="LEITOR DE CÓDIGO DE BARRAS (FOCO)", height=48,
             font=(theme.FONT_FAMILY, 20), fg_color=theme.CARD, border_color=theme.PRIMARY,
             border_width=2, text_color=theme.TEXT,
+            # Aplica a validação ao Entry
+            validate="key",
+            validatecommand=vcmd,
         )
         self.entry.pack(side="top", fill="x")
         self.entry.bind("<Return>", self._handle_submit)
         self.entry.bind("<FocusOut>", self._restore_focus)
 
         self.after(100, self._focus_entry)
+
+    def _validate_input(self, new_value):
+        """Permite apenas dígitos e o caractere '*' no campo."""
+        # Permite que o campo fique vazio (ao apagar)
+        return all(char.isdigit() or char == '*' for char in new_value)
 
     def _focus_entry(self):
         if self.keep_focus_active and self.winfo_exists():

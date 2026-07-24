@@ -40,14 +40,6 @@ def get_technician_productivity(start_date: datetime, end_date: datetime):
         ORDER BY
             total_value DESC;
     """
-    # Assume local timezone for input dates and convert to UTC for query
-    try:
-        local_tz = pytz.timezone("America/Sao_Paulo") # Or your local timezone
-        start_utc = local_tz.localize(start_date).astimezone(pytz.utc)
-        end_utc = local_tz.localize(end_date.replace(hour=23, minute=59, second=59)).astimezone(pytz.utc)
-        params = (start_utc.strftime('%Y-%m-%d %H:%M:%S'), end_utc.strftime('%Y-%m-%d %H:%M:%S'))
-    except ImportError: # Fallback if pytz is not installed
-        params = (start_date.strftime('%Y-%m-%d 00:00:00'), end_date.strftime('%Y-%m-%d 23:59:59'))
     params = _get_utc_date_range(start_date, end_date)
     return fetchall(sql, params)
 
@@ -65,13 +57,5 @@ def get_sales_by_period(start_date: datetime, end_date: datetime):
         GROUP BY forma_pagamento
         ORDER BY total_value DESC;
     """
-    # Assume local timezone for input dates and convert to UTC for query
-    try:
-        local_tz = pytz.timezone("America/Sao_Paulo") # Or your local timezone
-        start_utc = local_tz.localize(start_date).astimezone(pytz.utc)
-        end_utc = local_tz.localize(end_date.replace(hour=23, minute=59, second=59)).astimezone(pytz.utc)
-        params = (start_utc.strftime('%Y-%m-%d %H:%M:%S'), end_utc.strftime('%Y-%m-%d %H:%M:%S'))
-    except ImportError: # Fallback if pytz is not installed
-        params = (start_date.strftime('%Y-%m-%d 00:00:00'), end_date.strftime('%Y-%m-%d 23:59:59'))
     params = _get_utc_date_range(start_date, end_date)
     return fetchall(sql, params)

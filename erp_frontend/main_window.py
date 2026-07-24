@@ -1,6 +1,9 @@
 import customtkinter as ctk
 from tkinter import ttk, Menu
 import datetime
+import os
+from PIL import Image
+import sys
 
 from erp_frontend import theme
 from erp_frontend.dashboard_view import DashboardView
@@ -25,7 +28,7 @@ ctk.set_default_color_theme("blue")
 class MainWindow(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("miniERP - Frente de Caixa")
+        self.title("Odair AutoCenter - ERP")
         self.configure(fg_color=theme.BG)
         self.current_user = get_current_user()
         self.current_view = None
@@ -99,7 +102,7 @@ class MainWindow(ctk.CTk):
 
     def _build_sidebar(self, parent):
         sidebar = ctk.CTkFrame(
-            parent, width=110, fg_color=theme.SIDEBAR_BG, corner_radius=0,
+            parent, width=140, fg_color=theme.SIDEBAR_BG, corner_radius=0,
             border_width=0,
         )
         sidebar.pack(side="left", fill="y")
@@ -107,12 +110,25 @@ class MainWindow(ctk.CTk):
 
         # "Logo" - bloco preenchido com a cor primária
         logo_wrap = ctk.CTkFrame(sidebar, fg_color=theme.SIDEBAR_BG, corner_radius=0)
-        logo_wrap.pack(fill="x", padx=12, pady=(16, 8))
-        logo = ctk.CTkLabel(
-            logo_wrap, text="ERP", fg_color=theme.PRIMARY, text_color=theme.PRIMARY_FOREGROUND,
-            font=theme.font_title(20), corner_radius=theme.RADIUS, height=56,
-        )
-        logo.pack(fill="x")
+        logo_wrap.pack(fill="x", padx=10, pady=(16, 8))
+
+        try:
+            # Abordagem mais robusta para encontrar o caminho do asset
+            # O script start.py adiciona a raiz do projeto ao sys.path
+            base_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
+            logo_path = os.path.join(base_dir, "erp_frontend", "assets", "logo.png")
+
+            # Carrega a imagem do logo
+            logo_image = ctk.CTkImage(Image.open(logo_path), size=(100, 100))
+            logo_label = ctk.CTkLabel(logo_wrap, image=logo_image, text="")
+        except FileNotFoundError:
+            # Imprime o caminho que falhou para ajudar na depuração
+            print(f"DEBUG: Logo não encontrado no caminho esperado: {logo_path}")
+            # Fallback para o texto se a imagem não for encontrada
+            logo_label = ctk.CTkLabel(
+                logo_wrap, text="ERP", fg_color=theme.PRIMARY, text_color=theme.PRIMARY_FOREGROUND,
+                font=theme.font_title(20), corner_radius=theme.RADIUS, height=56)
+        logo_label.pack(fill="x")
 
         self._nav_buttons = {}
         menu_items = [
@@ -134,12 +150,12 @@ class MainWindow(ctk.CTk):
                 command=command,
                 fg_color=theme.CARD,
                 hover_color=theme.SECONDARY,
-                text_color=theme.TEXT_MUTED,
+                text_color=theme.TEXT,
                 border_width=2,
                 border_color=theme.SECONDARY,
-                font=(theme.FONT_FAMILY, 11, "bold"),
+                font=(theme.FONT_FAMILY, 13, "bold"),
                 corner_radius=theme.RADIUS,
-                height=70,
+                height=90,
             )
             btn.pack(fill="x", pady=6)
             self._nav_buttons[key] = btn
@@ -158,7 +174,7 @@ class MainWindow(ctk.CTk):
                 btn.configure(fg_color=theme.PRIMARY, text_color=theme.PRIMARY_FOREGROUND,
                               border_color=theme.PRIMARY)
             else:
-                btn.configure(fg_color=theme.CARD, text_color=theme.TEXT_MUTED,
+                btn.configure(fg_color=theme.CARD, text_color=theme.TEXT,
                               border_color=theme.SECONDARY)
 
     def _logout(self):
@@ -226,9 +242,13 @@ class MainWindow(ctk.CTk):
     def _create_dropdown(self, parent, label, options: dict):
         menu = Menu(self, tearoff=0, bg=theme.CARD, fg=theme.TEXT,
                     activebackground=theme.PRIMARY, activeforeground=theme.PRIMARY_FOREGROUND,
-                    font=(theme.FONT_FAMILY, 11, "bold"), bd=0)
-        for item_label, command in options.items():
-            menu.add_command(label=item_label, command=command)
+                    font=(theme.FONT_FAMILY, 12, "bold"), bd=0)
+        
+        num_options = len(options)
+        for i, (item_label, command) in enumerate(options.items()):
+            menu.add_command(label=f"  {item_label}  ", command=command)
+            if i < num_options - 1:
+                menu.add_separator()
 
         def open_menu():
             x = btn.winfo_rootx()
@@ -238,8 +258,8 @@ class MainWindow(ctk.CTk):
         btn = ctk.CTkButton(
             parent, text=f"{label} ▾", command=open_menu,
             fg_color="transparent", hover_color=theme.CARD,
-            text_color=theme.TEXT_MUTED, font=(theme.FONT_FAMILY, 12, "bold"),
-            corner_radius=theme.RADIUS, height=32,
+            text_color=theme.TEXT, font=(theme.FONT_FAMILY, 13, "bold"),
+            corner_radius=theme.RADIUS, height=36,
         )
         btn.pack(side="left", padx=8)
         return btn

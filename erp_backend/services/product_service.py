@@ -67,10 +67,12 @@ def update_stock(product_id: int, delta: float):
     raise RuntimeError('Direct stock update is not allowed; use stock movements')
 
 def search_by_barcode(barcode: str) -> Optional[Product]:
-    row = fetchone("SELECT * FROM products WHERE codigo_barras = ?", (barcode,))
-    if not row:
-        return None
-    return Product.from_row(row)
+    """
+    Busca um produto pelo código de barras (EAN) ou pelo SKU.
+    A busca por SKU é um fallback útil para quando o código de barras não está cadastrado.
+    """
+    row = fetchone("SELECT * FROM products WHERE codigo_barras = ? OR sku = ?", (barcode, barcode))
+    return Product.from_row(row) if row else None
 
 def get_purchase_suggestions() -> List[dict]:
     """

@@ -159,8 +159,8 @@ class OSModal(ctk.CTkToplevel):
         self.cb_pagamento.pack(side="left", padx=5)
 
         self.f_installments = ctk.CTkFrame(f_actions, fg_color="transparent")
-        ctk.CTkLabel(self.f_installments, text="Parcelas:", font=theme.font_body(12), text_color=theme.TEXT_MUTED).pack(side="left", padx=5)
-        self.ent_installments = ctk.CTkEntry(self.f_installments, width=60, font=theme.font_body(14), fg_color=theme.CARD, border_color=theme.SECONDARY)
+        ctk.CTkLabel(self.f_installments, text="Parcelas:", font=theme.font_body(12), text_color=theme.TEXT_MUTED).pack(side="left", padx=(10, 5))
+        self.ent_installments = ctk.CTkEntry(self.f_installments, width=50, font=theme.font_body(14), fg_color=theme.CARD, border_color=theme.SECONDARY)
         self.ent_installments.insert(0, "1")
         self.ent_installments.pack(side="left")
 
@@ -274,7 +274,7 @@ class OSModal(ctk.CTkToplevel):
 
     def toggle_installments_entry(self, selected_payment: str):
         if selected_payment == "CREDIARIO":
-            self.f_installments.pack(side="left", padx=5, before=self.cb_pagamento.master.children['!ctkbutton'])
+            self.f_installments.pack(side="left", padx=5)
         else:
             self.f_installments.pack_forget()
 

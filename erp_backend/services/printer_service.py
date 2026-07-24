@@ -39,9 +39,10 @@ def generate_os_receipt_text(os_id: int, os_data: dict, items: list) -> str:
     now = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
     
     lines = []
-    lines.append("MINIERP SISTEMAS LTDA".center(40))
-    lines.append("RUA EXEMPLO, 123 - BAIRRO".center(40))
-    lines.append("SUA CIDADE - UF".center(40))
+    lines.append("ODAIR AUTOCENTER".center(40))
+    lines.append("52.487.021/0001-8".center(40))
+    lines.append("RODOVIA AL-430 S/N.º".center(40))
+    lines.append("NOVA FLEXEIRAS - 57995-000".center(40))
     lines.append("ORDEM DE SERVICO".center(40))
     lines.append("-" * 40)
     lines.append(format_line(f"OS NUM: {os_id:05d}", now))
@@ -75,11 +76,11 @@ def generate_os_receipt_text(os_id: int, os_data: dict, items: list) -> str:
 def generate_receipt_text(sale_id: int, cart: list, total: float, payment_method: str, desconto_total: float = 0.0) -> str:
     now = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
     
-    lines = []
-    lines.append("MINIERP SISTEMAS LTDA".center(40))
-    lines.append("RUA EXEMPLO, 123 - CENTRO".center(40))
-    lines.append("CEP 00000-000 - CIDADE/UF".center(40))
-    lines.append("TEL: (00) 0000-0000".center(40))
+    lines = ["ODAIR AUTOCENTER".center(40)]
+    lines.append("52.487.021/0001-8".center(40))
+    lines.append("RODOVIA AL-430 S/N.º".center(40))
+    lines.append("NOVA FLEXEIRAS - 57995-000".center(40))
+    lines.append("FONE: (82) 99970-5526".center(40))
     lines.append("-" * 40)
     lines.append(format_line("VENDA / CUPOM", now))
     lines.append(format_line(f"DOC: {sale_id:06d}", "OPERADOR: CAIXA 01"))

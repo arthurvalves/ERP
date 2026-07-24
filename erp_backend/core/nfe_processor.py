@@ -74,7 +74,10 @@ def process_nfe_xml(xml_content: str):
 
         for item in nfe_data['items']:
             match_result = find_product_match(item, all_products, supplier_id)
-            matched_product = match_result['product'] if match_result['confidence'] >= 85 else None
+            # Correção: Considera um match mesmo com confiança baixa, para evitar duplicação.
+            # A UI irá sinalizar como "REVISAR", e o usuário deve resolver manualmente.
+            # Só cria um produto novo se a confiança for muito baixa (ex: < 30) ou nenhum match.
+            matched_product = match_result['product'] if match_result['confidence'] >= 30 else None
 
             # 5. CRIAÇÃO OU ATUALIZAÇÃO DO PRODUTO
             if not matched_product:

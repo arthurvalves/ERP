@@ -242,14 +242,20 @@ class PDVView(ctk.CTkFrame):
         self.app_window = app_window
         self.cart = []
 
+        # 1. Cria os componentes principais primeiro
         columns = ("PRODUTO", "QTD", "UNIT", "DESC.", "SUBTOTAL")
         self.table = TableComponent(self, columns, style="PDV.Treeview")
+        self.scanner = InputBarScanner(self, on_submit=self.add_product_from_scanner)
+        self.total_lbl = ctk.CTkLabel(self, text="TOTAL: R$ 0.00", font=theme.font_title(36), text_color=theme.PRIMARY)
+
+        # 2. Configura as colunas da tabela
         self.table.column("PRODUTO", width=400, anchor="w")
         self.table.column("QTD", width=80)
         self.table.column("UNIT", width=120)
         self.table.column("DESC.", width=100)
         self.table.column("SUBTOTAL", width=120)
 
+        # 3. Agora, monta a UI com os componentes já criados
         self.setup_ui()
         self.bind_shortcuts()
 
@@ -258,7 +264,12 @@ class PDVView(ctk.CTkFrame):
         left_panel = ctk.CTkFrame(self, width=600, fg_color="transparent")
         left_panel.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
-        self.scanner = InputBarScanner(left_panel, on_submit=self.add_product_from_scanner)
+        # Adiciona um título e ícone para a barra de scanner
+        scanner_header = ctk.CTkFrame(left_panel, fg_color="transparent")
+        scanner_header.pack(fill="x", pady=(0, 5))
+        ctk.CTkLabel(scanner_header, text="SCANNER ║", font=theme.font_bold(14), text_color=theme.PRIMARY).pack(side="left")
+        ctk.CTkLabel(scanner_header, text="Aponte o leitor de código de barras ou digite o SKU e pressione ENTER", font=theme.font_body(12), text_color=theme.TEXT_MUTED).pack(side="left", padx=5)
+
         self.scanner.pack(fill="x", pady=(0, 10))
 
         self.table.pack(in_=left_panel, fill="both", expand=True)
@@ -267,8 +278,20 @@ class PDVView(ctk.CTkFrame):
         right_panel.pack(side="right", fill="y", padx=(0, 10), pady=10)
         right_panel.pack_propagate(False)
 
-        self.total_lbl = ctk.CTkLabel(right_panel, text="TOTAL: R$ 0.00", font=theme.font_title(36), text_color=theme.PRIMARY)
         self.total_lbl.pack(expand=True)
+
+        # Adiciona os botões de ação que estavam faltando
+        actions_frame = ctk.CTkFrame(right_panel, fg_color="transparent")
+        actions_frame.pack(side="bottom", fill="x", padx=10, pady=10)
+
+        btn_finalize = ctk.CTkButton(actions_frame, text="[F2] FINALIZAR VENDA", command=self.finalize_sale, height=50, **theme.btn_success(font=theme.font_bold(16)))
+        btn_finalize.pack(fill="x", pady=5)
+
+        btn_discount = ctk.CTkButton(actions_frame, text="[F3] DESCONTO NO ITEM", command=self.apply_item_discount, height=50, **theme.btn_secondary(font=theme.font_bold(16)))
+        btn_discount.pack(fill="x", pady=5)
+
+        btn_clear = ctk.CTkButton(actions_frame, text="[ESC] LIMPAR VENDA", command=self.clear_sale, height=50, **theme.btn_danger(font=theme.font_bold(16)))
+        btn_clear.pack(fill="x", pady=5)
 
     def bind_shortcuts(self):
         self.app_window.bind("<F2>", self.finalize_sale)
@@ -375,11 +398,6 @@ class PDVView(ctk.CTkFrame):
 
         self.total_lbl.configure(text=f"TOTAL: R$ {total:.2f}")
 
-        if highlight_idx is not None:
-            self.after(1500, lambda: self.remove_highlight(str(highlight_idx)))
-
-        self.total_lbl.configure(text=f"TOTAL: R$ {total:.2f}")
-        
         if highlight_idx is not None:
             self.after(1500, lambda: self.remove_highlight(str(highlight_idx)))
             
