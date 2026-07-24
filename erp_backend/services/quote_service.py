@@ -1,8 +1,4 @@
 from ..utils.db import transaction, fetchone, fetchall, execute_with_conn
-<<<<<<< HEAD
-=======
-from tkinter import messagebox
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
 
 def get_all_quotes(search_term: str = ""):
     """Busca todos os orçamentos, com filtro opcional."""
@@ -40,47 +36,18 @@ def convert_quote_to_os(quote_id: int) -> int:
     Copia cliente, veículo e todos os itens.
     """
     with transaction() as conn:
-<<<<<<< HEAD
-        # 1. Pega os dados do orçamento
-        quote, items = get_quote_details(quote_id)
-        if not quote:
-            raise ValueError("Orçamento não encontrado.")
-        if quote['status'] == 'Convertido':
-            raise ValueError("Este orçamento já foi convertido em uma OS.")
-
-        # 2. Cria a nova Ordem de Serviço
-        total_pecas = sum(i['quantidade'] * i['preco_unitario'] for i in items if not i['is_servico'])
-        total_servicos = sum(i['quantidade'] * i['preco_unitario'] for i in items if i['is_servico'])
-        total_geral = total_pecas + total_servicos
-
-        os_id = execute_with_conn(conn, """
-            INSERT INTO service_orders (customer_id, vehicle_id, status, total_pecas, total_servicos, total_geral)
-            VALUES (?, ?, 'Aberta', ?, ?, ?)
-        """, (quote['customer_id'], quote['vehicle_id'], total_pecas, total_servicos, total_geral))
-
-        # 3. Copia os itens do orçamento para a OS
-        for item in items:
-            tipo = 'servico' if item['is_servico'] else 'peca'
-            execute_with_conn(conn, """
-                INSERT INTO service_order_items (service_order_id, product_id, tipo, quantidade, preco_unitario)
-                VALUES (?, ?, ?, ?, ?)
-            """, (os_id, item['product_id'], tipo, item['quantidade'], item['preco_unitario']))
-
-        # 4. Atualiza o status do orçamento
-        execute_with_conn(conn, "UPDATE quotes SET status='Convertido' WHERE id=?", (quote_id,))
-        return os_id
-=======
         try:
             # 1. Pega os dados do orçamento
-            quote, items = get_quote_details(quote_id)
+            quote_data, items = get_quote_details(quote_id)
+            quote = dict(quote_data) if quote_data else None
             if not quote:
                 raise ValueError("Orçamento não encontrado.")
             if quote['status'] == 'Convertido':
                 raise ValueError("Este orçamento já foi convertido em uma OS.")
 
             # 2. Cria a nova Ordem de Serviço
-            total_pecas = sum(i['quantidade'] * i['preco_unitario'] for i in items if not i['is_servico'])
-            total_servicos = sum(i['quantidade'] * i['preco_unitario'] for i in items if i['is_servico'])
+            total_pecas = sum(i['quantidade'] * i['preco_unitario'] for i in items if not i.get('is_servico'))
+            total_servicos = sum(i['quantidade'] * i['preco_unitario'] for i in items if i.get('is_servico'))
             total_geral = total_pecas + total_servicos
 
             os_id = execute_with_conn(conn, """
@@ -90,7 +57,7 @@ def convert_quote_to_os(quote_id: int) -> int:
 
             # 3. Copia os itens do orçamento para a OS
             for item in items:
-                tipo = 'servico' if item['is_servico'] else 'peca'
+                tipo = 'servico' if item.get('is_servico') else 'peca'
                 execute_with_conn(conn, """
                     INSERT INTO service_order_items (service_order_id, product_id, tipo, quantidade, preco_unitario)
                     VALUES (?, ?, ?, ?, ?)
@@ -99,8 +66,7 @@ def convert_quote_to_os(quote_id: int) -> int:
             # 4. Atualiza o status do orçamento
             execute_with_conn(conn, "UPDATE quotes SET status='Convertido' WHERE id=?", (quote_id,))
             return os_id
-        except Exception as e:
+        except (ValueError, Exception) as e:
             conn.rollback()
-            messagebox.showerror("Erro na Conversão", f"Não foi possível converter o orçamento em OS.\n\nDetalhes: {e}")
-            return None
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
+            # Re-raise the exception to be handled by the UI layer
+            raise e

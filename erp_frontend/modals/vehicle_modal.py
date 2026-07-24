@@ -4,20 +4,14 @@ import re
 
 from erp_backend.models.vehicle import Vehicle
 from erp_backend.services import vehicle_service
-<<<<<<< HEAD
 from erp_frontend import theme
-=======
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
 
 
 class VehicleModal(ctk.CTkToplevel):
     def __init__(self, master, customer_id, vehicle_id=None, initial_plate=""):
         super().__init__(master)
         self.title("Novo Veículo" if not vehicle_id else "Editar Veículo")
-<<<<<<< HEAD
         self.configure(fg_color=theme.BG)
-=======
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.transient(master)
         self.grab_set()
 
@@ -33,11 +27,7 @@ class VehicleModal(ctk.CTkToplevel):
     def _center_window(self):
         self.update_idletasks()
         width = 520
-<<<<<<< HEAD
         height = 400
-=======
-        height = 400 # Aumentado para caber os novos campos
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         x = (screen_width // 2) - (width // 2)
@@ -62,52 +52,28 @@ class VehicleModal(ctk.CTkToplevel):
         buttons = ctk.CTkFrame(self, fg_color="transparent")
         buttons.pack(fill="x", padx=16, pady=(0, 16))
 
-<<<<<<< HEAD
         ctk.CTkButton(buttons, text="Cancelar", command=self._close, **theme.btn_secondary()).pack(side="right")
         ctk.CTkButton(buttons, text="Salvar", command=self._save, **theme.btn_primary()).pack(side="right", padx=(0, 8))
 
     def _format_plate(self, event=None):
-=======
-        ctk.CTkButton(buttons, text="Cancelar", command=self._close).pack(side="right")
-        ctk.CTkButton(buttons, text="Salvar", command=self._save).pack(side="right", padx=(0, 8))
-
-    def _format_plate(self, event=None):
-        """Formata a placa automaticamente ao sair do campo."""
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         plate_raw = self.plate_entry.get().strip().upper().replace('-', '')
         if not plate_raw:
             return
 
         formatted_plate = ""
-<<<<<<< HEAD
         if len(plate_raw) == 7 and plate_raw[4].isdigit():
             formatted_plate = plate_raw
         elif len(plate_raw) == 7 and plate_raw[3:].isdigit():
             formatted_plate = f"{plate_raw[:3]}-{plate_raw[3:]}"
         else:
             formatted_plate = plate_raw
-=======
-        # Verifica se é padrão Mercosul (LLLNLNN)
-        if len(plate_raw) == 7 and plate_raw[4].isdigit():
-            formatted_plate = plate_raw
-        # Verifica se é padrão comum (LLLNNNN)
-        elif len(plate_raw) == 7 and plate_raw[3:].isdigit():
-            formatted_plate = f"{plate_raw[:3]}-{plate_raw[3:]}"
-        else:
-            formatted_plate = plate_raw # Mantém como está se não for um padrão reconhecido
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
 
         self.plate_entry.delete(0, "end")
         self.plate_entry.insert(0, formatted_plate)
 
     def _add_field(self, parent, label, row):
-<<<<<<< HEAD
         ctk.CTkLabel(parent, text=label, text_color=theme.TEXT).grid(row=row, column=0, sticky="w", pady=(0, 8))
         entry = ctk.CTkEntry(parent, fg_color=theme.CARD, border_color=theme.SECONDARY)
-=======
-        ctk.CTkLabel(parent, text=label).grid(row=row, column=0, sticky="w", pady=(0, 8))
-        entry = ctk.CTkEntry(parent)
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         entry.grid(row=row, column=1, sticky="ew", pady=(0, 8), padx=(12, 0))
         parent.grid_columnconfigure(1, weight=1)
         return entry
@@ -129,11 +95,7 @@ class VehicleModal(ctk.CTkToplevel):
         self.km_entry.insert(0, str(vehicle.current_km or ""))
 
     def _save(self):
-<<<<<<< HEAD
         self._format_plate()
-=======
-        self._format_plate() # Garante a formatação final antes de salvar
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         plate = self.plate_entry.get().strip().upper()
         brand = self.brand_entry.get().strip()
         model = self.model_entry.get().strip()
@@ -141,10 +103,6 @@ class VehicleModal(ctk.CTkToplevel):
         color = self.color_entry.get().strip()
         km_text = self.km_entry.get().strip()
 
-<<<<<<< HEAD
-=======
-        # --- VALIDAÇÕES ---
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         if not plate:
             messagebox.showerror("Erro de Validação", "O campo 'Placa' é obrigatório.")
             return
@@ -168,10 +126,6 @@ class VehicleModal(ctk.CTkToplevel):
         if year_text and not year_text.isdigit():
             messagebox.showerror("Erro de Validação", "O campo 'Ano/Modelo' deve conter apenas números.")
             return
-<<<<<<< HEAD
-=======
-        # --- FIM DAS VALIDAÇÕES ---
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
 
         try:
             year = int(year_text) if year_text else None
@@ -180,11 +134,6 @@ class VehicleModal(ctk.CTkToplevel):
                 return
         except ValueError:
             year = None
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         try:
             km = int(km_text) if km_text else None
         except ValueError:

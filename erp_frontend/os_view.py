@@ -3,45 +3,26 @@ from tkinter import messagebox, simpledialog, ttk, Menu
 from erp_frontend.components.table import TableComponent
 from erp_backend.utils.db import get_connection
 from erp_backend.services.sales_service import create_sale, add_sale_item
-<<<<<<< HEAD
 from erp_backend.services import vehicle_service, customer_service, user_service
 from erp_frontend.modals.customer_search_modal import CustomerSearchModal
 from erp_frontend.modals.vehicle_modal import VehicleModal
 from erp_frontend import theme
-=======
-# Imports de serviços
-from erp_backend.services import vehicle_service, customer_service, user_service
-from erp_frontend.modals.customer_search_modal import CustomerSearchModal
-from erp_frontend.modals.vehicle_modal import VehicleModal
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
 
 class OSModal(ctk.CTkToplevel):
     def __init__(self, master, os_id=None, on_save=None):
         super().__init__(master)
-<<<<<<< HEAD
         self.title(f"Ordem de Serviço #{os_id}" if os_id else "Nova Ordem de Serviço")
         self.configure(fg_color=theme.BG)
-=======
-        self.title(f"Ordem de Serviço #{os_id}" if os_id else "Nova Ordem de Serviço") # Corrigido
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.transient(master)
         self.grab_set()
 
         self.os_id = os_id
         self.on_save = on_save
         self.items = []
-<<<<<<< HEAD
         self.customer_id = None
         self.vehicle_id = None
         self.technicians = user_service.get_technicians()
 
-=======
-        # Variáveis de estado para os novos IDs
-        self.customer_id = None
-        self.vehicle_id = None
-        self.technicians = user_service.get_technicians()
-        
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.setup_ui()
         self.load_data()
         self.bind("<Escape>", lambda e: self.destroy())
@@ -58,26 +39,15 @@ class OSModal(ctk.CTkToplevel):
         self.geometry(f'{width}x{height}+{x}+{y}')
         self.resizable(False, False)
 
-<<<<<<< HEAD
     def setup_ui(self):
         self.frame = ctk.CTkFrame(self, fg_color=theme.BG)
         self.frame.pack(fill="both", expand=True, padx=15, pady=15)
 
         f_header = ctk.CTkFrame(self.frame, **theme.card_frame_kwargs())
-=======
-
-    def setup_ui(self):
-        self.frame = ctk.CTkFrame(self)
-        self.frame.pack(fill="both", expand=True, padx=15, pady=15)
-
-        # --- CABEÇALHO (INFO VEÍCULO / STATUS) ---
-        f_header = ctk.CTkFrame(self.frame, fg_color="#2b2b2b", corner_radius=8)
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         f_header.pack(fill="x", pady=(0, 10), ipady=5)
 
         f_placa = ctk.CTkFrame(f_header, fg_color="transparent")
         f_placa.pack(side="left", expand=True, fill="x", padx=10)
-<<<<<<< HEAD
         ctk.CTkLabel(f_placa, text="Placa (Pressione ENTER para buscar):", font=theme.font_bold(12), text_color=theme.TEXT_MUTED).pack(anchor="w")
         self.ent_placa = ctk.CTkEntry(f_placa, font=theme.font_body(16), fg_color=theme.CARD_ALT, border_color=theme.SECONDARY)
         self.ent_placa.pack(fill="x")
@@ -134,74 +104,10 @@ class OSModal(ctk.CTkToplevel):
 
         ctk.CTkLabel(f_add, text="Qtd:", font=theme.font_body(12), text_color=theme.TEXT_MUTED).pack(side="left", padx=5)
         self.ent_qtd = ctk.CTkEntry(f_add, width=60, font=theme.font_body(14), fg_color=theme.CARD, border_color=theme.SECONDARY)
-=======
-        ctk.CTkLabel(f_placa, text="Placa (Pressione ENTER para buscar):", font=("Roboto", 12, "bold")).pack(anchor="w")
-        self.ent_placa = ctk.CTkEntry(f_placa, font=("Roboto", 16))
-        self.ent_placa.pack(fill="x")
-        self.ent_placa.bind("<Return>", self.search_vehicle_by_plate)
-
-        # Labels para exibir informações do cliente e veículo
-        self.lbl_vehicle_info = ctk.CTkLabel(f_header, text="Veículo: --", font=("Roboto", 14), anchor="w")
-        self.lbl_vehicle_info.pack(side="left", expand=True, fill="x", padx=10)
-
-        self.lbl_customer_info = ctk.CTkLabel(f_header, text="Cliente: --", font=("Roboto", 14), anchor="w")
-        self.lbl_customer_info.pack(side="left", expand=True, fill="x", padx=10)
-
-        # Botão para editar/adicionar veículo
-        self.btn_edit_vehicle = ctk.CTkButton(f_header, text="EDITAR VEÍCULO", font=("Roboto", 12), command=self.edit_vehicle, state="disabled")
-        self.btn_edit_vehicle.pack(side="left", padx=10)
-
-
-        # --- KM ATUAL ---
-        f_km = ctk.CTkFrame(f_header, fg_color="transparent")
-        f_km.pack(side="left", expand=True, fill="x", padx=10)
-        ctk.CTkLabel(f_km, text="KM Atual:", font=("Roboto", 12, "bold")).pack(anchor="w")
-        self.ent_km = ctk.CTkEntry(f_km, font=("Roboto", 16))
-        self.ent_km.pack(fill="x")
-
-        # --- STATUS ---
-        f_status = ctk.CTkFrame(f_header, fg_color="transparent")
-        f_status.pack(side="left", expand=True, fill="x", padx=10)
-        ctk.CTkLabel(f_status, text="Status do Atendimento:", font=("Roboto", 12, "bold")).pack(anchor="w")
-        self.cb_status = ctk.CTkOptionMenu(f_status, values=["Aberta", "Em Andamento", "Aguardando Peça", "Concluída", "Faturada", "Cancelada"], font=("Roboto", 14))
-        self.cb_status.pack(fill="x")
-
-        # --- AGENDAMENTO ---
-        f_schedule = ctk.CTkFrame(self.frame, fg_color="#2b2b2b", corner_radius=8)
-        f_schedule.pack(fill="x", pady=10, ipady=5)
-
-        ctk.CTkLabel(f_schedule, text="Agendamento:", font=("Roboto", 12, "bold")).pack(side="left", padx=10)
-
-        ctk.CTkLabel(f_schedule, text="Data:", font=("Roboto", 12)).pack(side="left", padx=(10, 5))
-        self.ent_schedule_date = ctk.CTkEntry(f_schedule, placeholder_text="DD/MM/AAAA", width=120)
-        self.ent_schedule_date.pack(side="left")
-
-        ctk.CTkLabel(f_schedule, text="Hora:", font=("Roboto", 12)).pack(side="left", padx=(10, 5))
-        self.ent_schedule_time = ctk.CTkEntry(f_schedule, placeholder_text="HH:MM", width=80)
-        self.ent_schedule_time.pack(side="left")
-
-        # --- DESCRIÇÃO DO SERVIÇO ---
-        ctk.CTkLabel(self.frame, text="Serviço a ser executado / Relato do Cliente:", font=("Roboto", 14, "bold")).pack(anchor="w", padx=5)
-        self.txt_desc = ctk.CTkTextbox(self.frame, height=80, font=("Roboto", 14))
-        self.txt_desc.pack(fill="x", padx=5, pady=(0, 15))
-
-        # --- ADIÇÃO DE PEÇAS E MÃO DE OBRA ---
-        f_add = ctk.CTkFrame(self.frame, fg_color="#1a1a1a", corner_radius=8)
-        f_add.pack(fill="x", padx=5, pady=(0, 10), ipady=5)
-        
-        ctk.CTkLabel(f_add, text="Inserir Peça ou Serviço:", font=("Roboto", 12)).pack(side="left", padx=10)
-        self.ent_code = ctk.CTkEntry(f_add, placeholder_text="SKU ou Cód. Barras", width=250, font=("Roboto", 14))
-        self.ent_code.pack(side="left", padx=5)
-        self.ent_code.bind("<Return>", lambda e: self.add_item())
-        
-        ctk.CTkLabel(f_add, text="Qtd:", font=("Roboto", 12)).pack(side="left", padx=5)
-        self.ent_qtd = ctk.CTkEntry(f_add, width=60, font=("Roboto", 14))
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.ent_qtd.insert(0, "1")
         self.ent_qtd.pack(side="left", padx=5)
         self.ent_qtd.bind("<Return>", lambda e: self.add_item())
 
-<<<<<<< HEAD
         btn_add = ctk.CTkButton(f_add, text="ADICIONAR", command=self.add_item, **theme.btn_primary())
         btn_add.pack(side="left", padx=10)
 
@@ -214,21 +120,6 @@ class OSModal(ctk.CTkToplevel):
 
         ctk.CTkLabel(f_add, text="[DEL] para remover item selecionado", text_color=theme.TEXT_MUTED, font=theme.font_body(10)).pack(side="right", padx=10)
 
-=======
-        btn_add = ctk.CTkButton(f_add, text="ADICIONAR", fg_color="#3498db", hover_color="#2980b9", font=("Roboto", 14, "bold"), command=self.add_item)
-        btn_add.pack(side="left", padx=10)
-        
-        # Seleção de Técnico Responsável
-        ctk.CTkLabel(f_add, text="Técnico:", font=("Roboto", 12)).pack(side="left", padx=(20, 5))
-        technician_names = [tech['username'] for tech in self.technicians]
-        self.cb_technician = ctk.CTkOptionMenu(f_add, values=technician_names, width=150, font=("Roboto", 14))
-        if technician_names: self.cb_technician.set(technician_names[0])
-        self.cb_technician.pack(side="left")
-
-        ctk.CTkLabel(f_add, text="[DEL] para remover item selecionado", text_color="#7f8c8d", font=("Roboto", 10)).pack(side="right", padx=10)
-
-        # --- TABELA DE ITENS ---
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         columns = ("TIPO", "CÓDIGO", "NOME", "QTD", "UNIT", "TOTAL")
         self.table = TableComponent(self.frame, columns)
         self.table.column("TIPO", width=120)
@@ -237,7 +128,6 @@ class OSModal(ctk.CTkToplevel):
         self.table.column("QTD", width=60)
         self.table.column("UNIT", width=100)
         self.table.column("TOTAL", width=100)
-<<<<<<< HEAD
 
         self.table.tag_configure("peca", foreground=theme.INFO)
         self.table.tag_configure("servico", foreground="#a855f7")
@@ -245,44 +135,23 @@ class OSModal(ctk.CTkToplevel):
         self.table.pack(fill="both", expand=True, padx=5, pady=5)
         self.table.bind("<Delete>", self.remove_item)
 
+        # --- RODAPÉ (CUSTOS E COBRANÇA) ---
         f_footer = ctk.CTkFrame(self.frame, fg_color="transparent")
         f_footer.pack(fill="x", side="bottom", padx=5, pady=10)
 
         f_totals = ctk.CTkFrame(f_footer, **theme.card_frame_kwargs())
         f_totals.pack(side="left", fill="y", ipadx=10, ipady=5)
-
+        
         self.lbl_tot_pecas = ctk.CTkLabel(f_totals, text="Peças: R$ 0.00", font=theme.font_body(14), text_color=theme.INFO)
         self.lbl_tot_pecas.pack(anchor="w", padx=10, pady=2)
         self.lbl_tot_serv = ctk.CTkLabel(f_totals, text="Mão de Obra: R$ 0.00", font=theme.font_body(14), text_color="#a855f7")
         self.lbl_tot_serv.pack(anchor="w", padx=10, pady=2)
         self.lbl_tot_geral = ctk.CTkLabel(f_totals, text="TOTAL GERAL: R$ 0.00", font=theme.font_title(18), text_color=theme.PRIMARY)
-=======
-        
-        self.table.tag_configure("peca", foreground="#3498db")
-        self.table.tag_configure("servico", foreground="#9b59b6")
-        
-        self.table.pack(fill="both", expand=True, padx=5, pady=5)
-        self.table.bind("<Delete>", self.remove_item)
-
-        # --- RODAPÉ (CUSTOS E COBRANÇA) ---
-        f_footer = ctk.CTkFrame(self.frame, fg_color="transparent")
-        f_footer.pack(fill="x", side="bottom", padx=5, pady=10)
-
-        f_totals = ctk.CTkFrame(f_footer, fg_color="#2b2b2b", corner_radius=8)
-        f_totals.pack(side="left", fill="y", ipadx=10, ipady=5)
-        
-        self.lbl_tot_pecas = ctk.CTkLabel(f_totals, text="Peças: R$ 0.00", font=("Roboto", 14), text_color="#3498db")
-        self.lbl_tot_pecas.pack(anchor="w", padx=10, pady=2)
-        self.lbl_tot_serv = ctk.CTkLabel(f_totals, text="Mão de Obra: R$ 0.00", font=("Roboto", 14), text_color="#9b59b6")
-        self.lbl_tot_serv.pack(anchor="w", padx=10, pady=2)
-        self.lbl_tot_geral = ctk.CTkLabel(f_totals, text="TOTAL GERAL: R$ 0.00", font=("Roboto", 18, "bold"), text_color="#2ecc71")
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.lbl_tot_geral.pack(anchor="w", padx=10, pady=(5, 2))
 
         f_actions = ctk.CTkFrame(f_footer, fg_color="transparent")
         f_actions.pack(side="right", fill="y")
 
-<<<<<<< HEAD
         ctk.CTkLabel(f_actions, text="Forma Pgto:", font=theme.font_body(12), text_color=theme.TEXT_MUTED).pack(side="left", padx=5)
         self.cb_pagamento = ctk.CTkOptionMenu(f_actions, values=["DINHEIRO", "PIX", "CARTÃO CRÉDITO", "CARTÃO DÉBITO", "CREDIARIO", "MISTO"],
                                                width=140, command=self.toggle_installments_entry,
@@ -303,38 +172,12 @@ class OSModal(ctk.CTkToplevel):
         btn_share.pack(side="right", padx=5)
 
         btn_salvar = ctk.CTkButton(f_actions, text="SALVAR OS", height=45, command=self.save, **theme.btn_primary(font=theme.font_bold(16)))
-=======
-        ctk.CTkLabel(f_actions, text="Forma Pgto:", font=("Roboto", 12)).pack(side="left", padx=5)
-        self.cb_pagamento = ctk.CTkOptionMenu(f_actions, values=["DINHEIRO", "PIX", "CARTÃO CRÉDITO", "CARTÃO DÉBITO", "CREDIARIO", "MISTO"], width=140, command=self.toggle_installments_entry)
-        self.cb_pagamento.pack(side="left", padx=5)
-
-        # Frame para o campo de parcelas, inicialmente oculto
-        self.f_installments = ctk.CTkFrame(f_actions, fg_color="transparent")
-        # Este frame será exibido ou ocultado pela função toggle_installments_entry
-        ctk.CTkLabel(self.f_installments, text="Parcelas:", font=("Roboto", 12)).pack(side="left", padx=5)
-        self.ent_installments = ctk.CTkEntry(self.f_installments, width=60, font=("Roboto", 14))
-        self.ent_installments.insert(0, "1")
-        self.ent_installments.pack(side="left")
-
-        btn_faturar = ctk.CTkButton(f_actions, text="FATURAR E COBRAR", font=("Roboto", 16, "bold"), height=45, fg_color="#2ecc71", hover_color="#27ae60", command=self.faturar)
-        btn_faturar.pack(side="right", padx=5)
-
-        btn_share = ctk.CTkButton(f_actions, text="AÇÕES (WHATSAPP / PDF)", font=("Roboto", 16, "bold"), height=45, fg_color="#8e44ad", hover_color="#9b59b6", command=self.open_post_action)
-        btn_share.pack(side="right", padx=5)
-
-        btn_salvar = ctk.CTkButton(f_actions, text="SALVAR OS", font=("Roboto", 16, "bold"), height=45, fg_color="#f39c12", hover_color="#d68910", command=self.save)
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         btn_salvar.pack(side="right", padx=5)
 
     def load_data(self):
         if not self.os_id:
             self.refresh_items()
             return
-<<<<<<< HEAD
-
-=======
-            
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         conn = get_connection()
         cur = conn.cursor()
         cur.execute("SELECT * FROM service_orders WHERE id = ?", (self.os_id,))
@@ -345,22 +188,13 @@ class OSModal(ctk.CTkToplevel):
             self.customer_id = os_data.get('customer_id')
             self.vehicle_id = os_data.get('vehicle_id')
 
-<<<<<<< HEAD
-=======
-            # Carrega e exibe os dados do veículo e cliente
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
             if self.vehicle_id:
                 vehicle = vehicle_service.get_vehicle_by_id(self.vehicle_id, conn=conn)
                 if vehicle:
                     self.ent_placa.insert(0, vehicle.plate)
                     self.ent_km.insert(0, str(vehicle.current_km or ''))
                     self.update_vehicle_and_customer_info(vehicle, conn=conn)
-<<<<<<< HEAD
 
-=======
-            
-            # Carrega a data e hora do agendamento, se houver
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
             if os_data.get('scheduled_start_time'):
                 from datetime import datetime
                 dt = datetime.strptime(os_data['scheduled_start_time'], '%Y-%m-%d %H:%M:%S')
@@ -374,11 +208,7 @@ class OSModal(ctk.CTkToplevel):
             LEFT JOIN users u ON i.technician_id = u.id
             WHERE i.service_order_id = ?
         """, (self.os_id,))
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         for row in cur.fetchall():
             self.items.append({
                 'product_id': row['product_id'],
@@ -411,27 +241,15 @@ class OSModal(ctk.CTkToplevel):
         self.lbl_vehicle_info.configure(text=f"Veículo: {vehicle.brand or ''} {vehicle.model or ''} ({vehicle.year or ''})")
         self.ent_km.delete(0, 'end')
         self.ent_km.insert(0, str(vehicle.current_km or ''))
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         customer = customer_service.get_customer_by_id(self.customer_id, conn=conn)
         if customer:
             self.lbl_customer_info.configure(text=f"Cliente: {customer.nome_razao_social}")
         else:
-<<<<<<< HEAD
             self.lbl_customer_info.configure(text="Cliente não encontrado!", text_color=theme.DANGER)
         self.btn_edit_vehicle.configure(state="normal")
 
     def edit_vehicle(self, plate_suggestion=None):
-=======
-            self.lbl_customer_info.configure(text="Cliente não encontrado!", text_color="red")
-        self.btn_edit_vehicle.configure(state="normal")
-
-    def edit_vehicle(self, plate_suggestion=None):
-        # Se não há cliente, força a seleção de um primeiro
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         if not self.customer_id:
             customer_id = CustomerSearchModal(self).get_input()
             if not customer_id:
@@ -439,42 +257,24 @@ class OSModal(ctk.CTkToplevel):
                 return
             self.customer_id = customer_id
 
-<<<<<<< HEAD
-=======
-        # Abre o modal do veículo
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         initial_plate = plate_suggestion or self.ent_placa.get().strip().upper()
         vehicle_modal = VehicleModal(self, customer_id=self.customer_id, vehicle_id=self.vehicle_id, initial_plate=initial_plate)
         new_vehicle_id = vehicle_modal.get_input()
 
         if new_vehicle_id:
             self.vehicle_id = new_vehicle_id
-<<<<<<< HEAD
-=======
-            # Recarrega as informações
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
             vehicle = vehicle_service.get_vehicle_by_id(self.vehicle_id)
             if vehicle:
                 self.ent_placa.delete(0, 'end')
                 self.ent_placa.insert(0, vehicle.plate)
 
     def get_customer_id(self):
-<<<<<<< HEAD
-=======
-        """Abre um modal para buscar e retornar o ID de um cliente."""
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         dialog = CustomerSearchModal(self)
         return dialog.get_input()
 
     def toggle_installments_entry(self, selected_payment: str):
-<<<<<<< HEAD
         if selected_payment == "CREDIARIO":
             self.f_installments.pack(side="left", padx=5, before=self.cb_pagamento.master.children['!ctkbutton'])
-=======
-        """Mostra ou oculta o campo de parcelas com base na forma de pagamento."""
-        if selected_payment == "CREDIARIO":
-            self.f_installments.pack(side="left", padx=5, before=self.cb_pagamento.master.children['!ctkbutton']) # Garante a ordem correta
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         else:
             self.f_installments.pack_forget()
 
@@ -516,11 +316,7 @@ class OSModal(ctk.CTkToplevel):
             'technician_id': technician_id,
             'technician_name': technician_name
         })
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.ent_code.delete(0, 'end')
         self.ent_qtd.delete(0, 'end')
         self.ent_qtd.insert(0, "1")
@@ -538,17 +334,10 @@ class OSModal(ctk.CTkToplevel):
     def refresh_items(self):
         for item in self.table.get_children():
             self.table.delete(item)
-<<<<<<< HEAD
 
         t_pecas = 0.0
         t_servicos = 0.0
 
-=======
-            
-        t_pecas = 0.0
-        t_servicos = 0.0
-        
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         for idx, item in enumerate(self.items):
             subtotal = (item['quantidade'] * item['preco_unitario']) - item.get('desconto_item', 0.0)
             if item['tipo'] == 'peca':
@@ -557,20 +346,12 @@ class OSModal(ctk.CTkToplevel):
             else:
                 t_servicos += subtotal
                 tipo_str, tag = "MÃO DE OBRA", "servico"
-<<<<<<< HEAD
 
-=======
-                
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
             self.table.insert("", "end", iid=str(idx), values=(
                 tipo_str, item['codigo'], item['nome'], item.get('technician_name', '--'),
                 f"{item['quantidade']:.2f}", f"R$ {item['preco_unitario']:.2f}", f"R$ {subtotal:.2f}"
             ), tags=(tag,))
-<<<<<<< HEAD
 
-=======
-            
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.lbl_tot_pecas.configure(text=f"Peças: R$ {t_pecas:.2f}")
         self.lbl_tot_serv.configure(text=f"Mão de Obra: R$ {t_servicos:.2f}")
         self.lbl_tot_geral.configure(text=f"TOTAL GERAL: R$ {(t_pecas + t_servicos):.2f}")
@@ -589,10 +370,6 @@ class OSModal(ctk.CTkToplevel):
         t_servicos = sum((i['quantidade'] * i['preco_unitario']) - i.get('desconto_item', 0.0) for i in self.items if i['tipo'] == 'servico')
         t_geral = t_pecas + t_servicos
 
-<<<<<<< HEAD
-=======
-        # Valida e formata a data/hora do agendamento
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         schedule_date = self.ent_schedule_date.get().strip()
         schedule_time = self.ent_schedule_time.get().strip()
         if schedule_date and schedule_time:
@@ -608,10 +385,6 @@ class OSModal(ctk.CTkToplevel):
         cur = conn.cursor()
         try:
             if self.os_id:
-<<<<<<< HEAD
-=======
-                # Atualiza a KM do veículo
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
                 if current_km.isdigit():
                     cur.execute("UPDATE vehicles SET current_km = ? WHERE id = ?", (int(current_km), self.vehicle_id))
 
@@ -635,18 +408,10 @@ class OSModal(ctk.CTkToplevel):
             return False
         finally:
             conn.close()
-<<<<<<< HEAD
 
     def open_post_action(self):
         if not self.save(): return
 
-=======
-            
-    def open_post_action(self):
-        if not self.save(): return
-
-        # Carrega dados do veículo para o PDF/Recibo
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         vehicle = vehicle_service.get_vehicle_by_id(self.vehicle_id)
         placa = vehicle.plate if vehicle else "N/A"
         veiculo_str = f"{vehicle.brand} {vehicle.model}" if vehicle else "N/A"
@@ -661,11 +426,6 @@ class OSModal(ctk.CTkToplevel):
             'total_servicos': sum((i['quantidade'] * i['preco_unitario']) - i.get('desconto_item', 0.0) for i in self.items if i['tipo'] == 'servico')
         }
         os_data['total_geral'] = os_data['total_pecas'] + os_data['total_servicos']
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         from erp_frontend.os_post_action_modal import OSPostActionModal
         OSPostActionModal(self.winfo_toplevel(), os_data, self.items)
 
@@ -673,28 +433,11 @@ class OSModal(ctk.CTkToplevel):
         if self.cb_status.get() == "Faturada":
             messagebox.showwarning("Aviso", "Esta Ordem de Serviço já foi faturada no caixa.")
             return
-<<<<<<< HEAD
 
         if not self.items:
             messagebox.showwarning("Aviso", "A OS não possui itens ou serviços para ser faturada.")
             return
 
-        if not self.save(): return
-
-        t_pecas = sum((i['quantidade'] * i['preco_unitario']) - i.get('desconto_item', 0.0) for i in self.items if i['tipo'] == 'peca')
-        t_servicos = sum((i['quantidade'] * i['preco_unitario']) - i.get('desconto_item', 0.0) for i in self.items if i['tipo'] == 'servico')
-        t_geral = t_pecas + t_servicos
-
-        from erp_backend.utils.db import transaction
-        from erp_backend.services.sales_service import create_sale, add_sale_item
-
-        try:
-=======
-            
-        if not self.items:
-            messagebox.showwarning("Aviso", "A OS não possui itens ou serviços para ser faturada.")
-            return
-            
         if not self.save(): return
         
         # 1. Calcula o total somando peças e serviços
@@ -706,8 +449,6 @@ class OSModal(ctk.CTkToplevel):
         from erp_backend.services.sales_service import create_sale, add_sale_item
         
         try:
-            # 2. Inicia a transação atómica
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
             with transaction() as conn:
                 payment_method = self.cb_pagamento.get()
                 installments = 1
@@ -721,16 +462,6 @@ class OSModal(ctk.CTkToplevel):
                         return
 
                 sale_id = create_sale(self.customer_id, t_geral, 0.0, payment_method, installments, conn=conn)
-<<<<<<< HEAD
-
-                for item in self.items:
-                    add_sale_item(sale_id, item['product_id'], item['quantidade'], item['preco_unitario'], item.get('desconto_item', 0.0), conn=conn)
-
-                conn.execute("UPDATE service_orders SET status='Faturada', data_fechamento=CURRENT_TIMESTAMP WHERE id=?", (self.os_id,))
-
-            self.cb_status.set("Faturada")
-
-=======
                 
                 # Insere os itens da OS na Venda (o que vai acionar a nossa verificação de stock)
                 for item in self.items:
@@ -739,11 +470,7 @@ class OSModal(ctk.CTkToplevel):
                 # Atualiza o status da OS na mesma transação
                 conn.execute("UPDATE service_orders SET status='Faturada', data_fechamento=CURRENT_TIMESTAMP WHERE id=?", (self.os_id,))
                 
-            # 3. Se chegou aqui, nada falhou! Atualiza a interface
             self.cb_status.set("Faturada")
-            
-            # 4. Prepara os dados para o modal de pós-ação
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
             vehicle = vehicle_service.get_vehicle_by_id(self.vehicle_id, conn=conn)
             os_data_final = {
                 'id': self.os_id,
@@ -756,57 +483,22 @@ class OSModal(ctk.CTkToplevel):
                 'total_geral': t_geral
             }
 
-<<<<<<< HEAD
-            from erp_frontend.os_post_action_modal import OSPostActionModal
-            OSPostActionModal(self.winfo_toplevel(), os_data_final, self.items)
-            self.destroy()
-
-        except ValueError as ve:
-=======
-            # 5. Abre o modal de ações e fecha a OS atual
             from erp_frontend.os_post_action_modal import OSPostActionModal
             OSPostActionModal(self.winfo_toplevel(), os_data_final, self.items)
             self.destroy()
             
         except ValueError as ve:
-            # Captura a nossa exceção de "Stock Insuficiente"
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
             messagebox.showwarning("Aviso de Stock", str(ve))
         except Exception as e:
             messagebox.showerror("Erro Crítico", f"Falha ao faturar a OS. Nenhuma alteração foi guardada.\n\nDetalhes: {e}")
 
 class OSView(ctk.CTkFrame):
     def __init__(self, master, app_window, **kwargs):
-<<<<<<< HEAD
         super().__init__(master, fg_color=theme.BG, **kwargs)
         self.app_window = app_window
         self.setup_ui()
         self.load_data()
 
-    def setup_ui(self):
-        top_frame = ctk.CTkFrame(self, fg_color="transparent")
-        top_frame.pack(fill="x", padx=20, pady=10)
-
-        self.search_entry = ctk.CTkEntry(top_frame, placeholder_text="🔎 BUSCA: PLACA OU VEÍCULO...", height=40,
-                                          font=theme.font_body(16), fg_color=theme.CARD, border_color=theme.SECONDARY)
-        self.search_entry.pack(side="left", fill="x", expand=True, padx=(0, 20))
-        self.search_entry.bind("<KeyRelease>", lambda e: self.load_data())
-
-        btn_new = ctk.CTkButton(top_frame, text="[ NOVA O.S. ]", command=self.new_os, **theme.btn_success())
-        btn_new.pack(side="right", padx=5)
-
-        btn_edit = ctk.CTkButton(top_frame, text="[ EDITAR ]", command=self.edit_selected, **theme.btn_secondary())
-        btn_edit.pack(side="right", padx=5)
-
-        btn_refresh = ctk.CTkButton(top_frame, text="[ ATUALIZAR ]", command=self.load_data, **theme.btn_primary())
-        btn_refresh.pack(side="right", padx=5)
-
-=======
-        super().__init__(master, fg_color="#1e1e1e", **kwargs)
-        self.app_window = app_window
-        self.setup_ui()
-        self.load_data()
-        
     def setup_ui(self):
         top_frame = ctk.CTkFrame(self, fg_color="transparent")
         top_frame.pack(fill="x", padx=20, pady=10)
@@ -824,7 +516,6 @@ class OSView(ctk.CTkFrame):
         btn_refresh = ctk.CTkButton(top_frame, text="[ ATUALIZAR ]", font=("Roboto", 14, "bold"), fg_color="#3498db", hover_color="#2980b9", command=self.load_data)
         btn_refresh.pack(side="right", padx=5)
         
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         columns = ("OS #", "PLACA", "VEÍCULO", "CLIENTE", "STATUS", "TOTAL GERAL", "DATA ABERTURA")
         self.table = TableComponent(self, columns)
         self.table.column("OS #", width=60)
@@ -836,30 +527,17 @@ class OSView(ctk.CTkFrame):
         self.table.column("DATA ABERTURA", width=150)
         self.table.pack(fill="both", expand=True, padx=20, pady=10)
         self.table.bind("<Double-1>", lambda e: self.edit_selected())
-<<<<<<< HEAD
         self.table.bind("<Button-3>", self._show_context_menu)
         self._create_context_menu()
 
-=======
-        self.table.bind("<Button-3>", self._show_context_menu) # Botão direito
-        self._create_context_menu()
-        
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
     def load_data(self):
         search_term = self.search_entry.get().strip()
         for item in self.table.get_children():
             self.table.delete(item)
-<<<<<<< HEAD
 
         conn = get_connection()
         cur = conn.cursor()
 
-=======
-            
-        conn = get_connection()
-        cur = conn.cursor()
-        
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         sql = """
             SELECT so.*, v.plate, v.brand, v.model, c.nome_razao_social
             FROM service_orders so
@@ -871,11 +549,7 @@ class OSView(ctk.CTkFrame):
             sql += " WHERE v.plate LIKE ? OR v.model LIKE ? OR c.nome_razao_social LIKE ?"
             params = (f"%{search_term}%", f"%{search_term}%", f"%{search_term}%")
         sql += " ORDER BY id DESC LIMIT 100"
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         cur.execute(sql, params)
         for row in cur.fetchall():
             self.table.insert("", "end", iid=str(row['id']), values=(
@@ -888,17 +562,11 @@ class OSView(ctk.CTkFrame):
                 row['data_abertura'][:16] if row['data_abertura'] else "--"
             ))
         conn.close()
-<<<<<<< HEAD
 
     def _create_context_menu(self):
         self.context_menu = Menu(self.table, tearoff=0, font=theme.font_body(12),
                                   bg=theme.CARD, fg=theme.TEXT, activebackground=theme.PRIMARY,
                                   activeforeground=theme.PRIMARY_FOREGROUND)
-=======
-        
-    def _create_context_menu(self):
-        self.context_menu = Menu(self.table, tearoff=0, font=("Roboto", 12))
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.context_menu.add_command(label="Nova Ordem de Serviço", command=self.new_os)
         self.context_menu.add_command(label="Editar O.S. Selecionada", command=self.edit_selected)
         self.context_menu.add_separator()
@@ -914,17 +582,9 @@ class OSView(ctk.CTkFrame):
 
     def new_os(self):
         OSModal(self, on_save=self.load_data)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
     def edit_selected(self):
         selected = self.table.selection()
         if not selected: return
         os_id = int(selected[0])
         OSModal(self, os_id=os_id, on_save=self.load_data)
-<<<<<<< HEAD
-=======
-        
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18

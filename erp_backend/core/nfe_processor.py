@@ -85,15 +85,9 @@ def process_nfe_xml(xml_content: str):
                 if ean and 'SEM GTIN' in ean.upper(): ean = None
                 
                 cur.execute("""
-<<<<<<< HEAD
-                    INSERT INTO products (sku, nome, nome_normalizado, codigo_barras, ncm, referencia, fornecedor_id, custo, estoque_atual)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-                """, (sku, nome, nome_norm, ean, item['NCM'], item['cProd'], supplier_id, item['vUnCom']))
-=======
                     INSERT INTO products (sku, nome, nome_normalizado, codigo_barras, ncm, referencia, fornecedor_id, custo, estoque_atual, cfop_padrao)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
                 """, (sku, nome, nome_norm, ean, item['NCM'], item['cProd'], supplier_id, item['vUnCom'], item.get('CFOP', '')))
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
                 product_id = cur.lastrowid
                 old_stock = 0
                 old_cost = 0.0
@@ -140,18 +134,11 @@ def process_nfe_xml(xml_content: str):
         conn.commit()
         
         # 8. DISPARO DE EVENTOS DESACOPLADOS
-        # Notifica o sistema de que a nota foi importada com sucesso (útil para atualizar UI ou enviar e-mails, sem criar duplicação de inserts)
-        try:
-            emit("NFeImported", {"chave_acesso": chave, "purchase_id": purchase_id})
-        except Exception as event_error:
-            # Eventos que falham não devem estourar o rollback do processamento da nota fiscal
-            print(f"Erro ao emitir evento NFeImported: {event_error}")
+        # Notifica o sistema de que a nota foi importada com sucesso (útil para atualizar UI ou enviar e-mails)
+        emit('NFeImported', {"chave_acesso": chave, "purchase_id": purchase_id})
 
-        return {"status": "success", "purchase_id": purchase_id, "chave": chave}
-        
-    except Exception as e:
-        conn.rollback()
-        raise e
-        
+        return {"status": "success", "chave": chave, "purchase_id": purchase_id}
+
     finally:
-        conn.close()
+        if conn:
+            conn.close()

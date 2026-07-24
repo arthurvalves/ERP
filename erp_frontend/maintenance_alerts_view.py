@@ -2,18 +2,11 @@ import customtkinter as ctk
 from tkinter import messagebox
 from erp_frontend.components.table import TableComponent
 from erp_backend.services import maintenance_service, whatsapp_service
-<<<<<<< HEAD
 from erp_frontend import theme
 
 class MaintenanceAlertsView(ctk.CTkFrame):
     def __init__(self, master, app_window, **kwargs):
         super().__init__(master, fg_color=theme.BG, **kwargs)
-=======
-
-class MaintenanceAlertsView(ctk.CTkFrame):
-    def __init__(self, master, app_window, **kwargs):
-        super().__init__(master, fg_color="#1e1e1e", **kwargs)
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.app_window = app_window
         self.setup_ui()
         self.load_data()
@@ -22,21 +15,12 @@ class MaintenanceAlertsView(ctk.CTkFrame):
         top_frame = ctk.CTkFrame(self, fg_color="transparent")
         top_frame.pack(fill="x", padx=20, pady=10)
 
-<<<<<<< HEAD
         ctk.CTkLabel(top_frame, text="ALERTAS DE MANUTENÇÃO PREVENTIVA", font=theme.font_title(24), text_color=theme.PRIMARY).pack(side="left")
 
         btn_notify = ctk.CTkButton(top_frame, text="[ NOTIFICAR CLIENTE ]", command=self.notify_customer, **theme.btn_primary())
         btn_notify.pack(side="right", padx=5)
 
         btn_refresh = ctk.CTkButton(top_frame, text="[ ATUALIZAR ]", command=self.load_data, **theme.btn_secondary())
-=======
-        ctk.CTkLabel(top_frame, text="Alertas de Manutenção Preventiva", font=("Roboto", 24, "bold")).pack(side="left")
-
-        btn_notify = ctk.CTkButton(top_frame, text="[ NOTIFICAR CLIENTE ]", fg_color="#3498db", hover_color="#2980b9", command=self.notify_customer)
-        btn_notify.pack(side="right", padx=5)
-
-        btn_refresh = ctk.CTkButton(top_frame, text="[ ATUALIZAR ]", command=self.load_data)
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         btn_refresh.pack(side="right", padx=5)
 
         columns = ("PLACA", "VEÍCULO", "CLIENTE", "KM ATUAL", "KM ÚLTIMA REVISÃO", "STATUS")
@@ -48,11 +32,7 @@ class MaintenanceAlertsView(ctk.CTkFrame):
         self.table.column("KM ÚLTIMA REVISÃO", width=150)
         self.table.column("STATUS", width=150)
         self.table.pack(fill="both", expand=True, padx=20, pady=10)
-<<<<<<< HEAD
         self.table.tag_configure("due", foreground=theme.DANGER, font=(theme.FONT_FAMILY, 12, "bold"))
-=======
-        self.table.tag_configure("due", foreground="#e74c3c", font=("Roboto", 12, "bold"))
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
 
     def load_data(self):
         for item in self.table.get_children():
@@ -77,10 +57,6 @@ class MaintenanceAlertsView(ctk.CTkFrame):
             return
 
         vehicle_id = int(selected[0])
-<<<<<<< HEAD
-=======
-        # Re-busca os dados para garantir que temos o telefone
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         alerts = maintenance_service.get_maintenance_alerts()
         alert_data = next((a for a in alerts if a['vehicle_id'] == vehicle_id), None)
 
@@ -97,8 +73,4 @@ class MaintenanceAlertsView(ctk.CTkFrame):
                     vehicle_model=alert_data['model']
                 )
             except Exception as e:
-<<<<<<< HEAD
                 messagebox.showerror("Erro", f"Falha ao tentar abrir o WhatsApp.\n\nDetalhes: {e}")
-=======
-                messagebox.showerror("Erro", f"Falha ao tentar abrir o WhatsApp.\n\nDetalhes: {e}")
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18

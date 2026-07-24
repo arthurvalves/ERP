@@ -2,20 +2,14 @@ import customtkinter as ctk
 from tkinter import messagebox
 from erp_frontend.components.table import TableComponent
 from erp_backend.services import service_service
-<<<<<<< HEAD
 from erp_frontend import theme
-=======
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
 
 class ServiceModal(ctk.CTkToplevel):
     def __init__(self, master, service_id=None, on_save=None):
         super().__init__(master)
         self.title("Editar Serviço" if service_id else "Novo Serviço")
         self.geometry("500x450")
-<<<<<<< HEAD
         self.configure(fg_color=theme.BG)
-=======
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.transient(master)
         self.grab_set()
 
@@ -27,7 +21,6 @@ class ServiceModal(ctk.CTkToplevel):
             self.load_data()
 
     def setup_ui(self):
-<<<<<<< HEAD
         frame = ctk.CTkFrame(self, fg_color=theme.BG)
         frame.pack(fill="both", expand=True, padx=20, pady=20)
 
@@ -55,36 +48,6 @@ class ServiceModal(ctk.CTkToplevel):
         btn_save.pack(fill="x", ipady=5)
 
     def load_data(self):
-=======
-        frame = ctk.CTkFrame(self)
-        frame.pack(fill="both", expand=True, padx=20, pady=20)
-
-        ctk.CTkLabel(frame, text="Nome do Serviço:", font=("Roboto", 14, "bold")).pack(anchor="w")
-        self.ent_name = ctk.CTkEntry(frame, font=("Roboto", 14))
-        self.ent_name.pack(fill="x", pady=(0, 10))
-
-        ctk.CTkLabel(frame, text="SKU / Código:", font=("Roboto", 12)).pack(anchor="w")
-        self.ent_sku = ctk.CTkEntry(frame, font=("Roboto", 14))
-        self.ent_sku.pack(fill="x", pady=(0, 10))
-
-        ctk.CTkLabel(frame, text="Preço Padrão (R$):", font=("Roboto", 12)).pack(anchor="w")
-        self.ent_price = ctk.CTkEntry(frame, font=("Roboto", 14))
-        self.ent_price.pack(fill="x", pady=(0, 10))
-
-        ctk.CTkLabel(frame, text="Categoria:", font=("Roboto", 12)).pack(anchor="w")
-        self.ent_category = ctk.CTkEntry(frame, font=("Roboto", 14))
-        self.ent_category.pack(fill="x", pady=(0, 10))
-
-        ctk.CTkLabel(frame, text="Descrição:", font=("Roboto", 12)).pack(anchor="w")
-        self.ent_description = ctk.CTkEntry(frame, font=("Roboto", 14))
-        self.ent_description.pack(fill="x", pady=(0, 20))
-
-        btn_save = ctk.CTkButton(frame, text="SALVAR", font=("Roboto", 16, "bold"), command=self.save)
-        btn_save.pack(fill="x", ipady=5)
-
-    def load_data(self):
-        # No futuro, isso usaria service_service.get_by_id(self.service_id)
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         from erp_backend.utils.db import fetchone
         service = fetchone("SELECT * FROM services WHERE id = ?", (self.service_id,))
         if service:
@@ -123,11 +86,7 @@ class ServiceModal(ctk.CTkToplevel):
 
 class ServicesView(ctk.CTkFrame):
     def __init__(self, master, app_window, **kwargs):
-<<<<<<< HEAD
         super().__init__(master, fg_color=theme.BG, **kwargs)
-=======
-        super().__init__(master, fg_color="#1e1e1e", **kwargs)
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         self.app_window = app_window
         self.setup_ui()
         self.load_data()
@@ -136,7 +95,6 @@ class ServicesView(ctk.CTkFrame):
         top_frame = ctk.CTkFrame(self, fg_color="transparent")
         top_frame.pack(fill="x", padx=20, pady=10)
 
-<<<<<<< HEAD
         self.search_entry = ctk.CTkEntry(top_frame, placeholder_text="🔎 BUSCAR SERVIÇO...", height=40,
                                           font=theme.font_body(16), fg_color=theme.CARD, border_color=theme.SECONDARY)
         self.search_entry.pack(side="left", fill="x", expand=True, padx=(0, 20))
@@ -146,16 +104,6 @@ class ServicesView(ctk.CTkFrame):
         btn_new.pack(side="right", padx=5)
 
         btn_edit = ctk.CTkButton(top_frame, text="[ EDITAR ]", command=self.edit_selected, **theme.btn_secondary())
-=======
-        self.search_entry = ctk.CTkEntry(top_frame, placeholder_text="🔎 BUSCAR SERVIÇO...", height=40, font=("Roboto", 16))
-        self.search_entry.pack(side="left", fill="x", expand=True, padx=(0, 20))
-        self.search_entry.bind("<KeyRelease>", lambda e: self.load_data())
-
-        btn_new = ctk.CTkButton(top_frame, text="[ NOVO SERVIÇO ]", command=self.new_service)
-        btn_new.pack(side="right", padx=5)
-
-        btn_edit = ctk.CTkButton(top_frame, text="[ EDITAR ]", command=self.edit_selected)
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
         btn_edit.pack(side="right", padx=5)
 
         columns = ("NOME DO SERVIÇO", "SKU", "CATEGORIA", "PREÇO PADRÃO")
@@ -188,8 +136,4 @@ class ServicesView(ctk.CTkFrame):
         selected = self.table.selection()
         if not selected: return
         service_id = int(selected[0])
-<<<<<<< HEAD
         ServiceModal(self, service_id=service_id, on_save=self.load_data)
-=======
-        ServiceModal(self, service_id=service_id, on_save=self.load_data)
->>>>>>> b8696156ad077242d2bbfc43a202beb2b9ea5c18
