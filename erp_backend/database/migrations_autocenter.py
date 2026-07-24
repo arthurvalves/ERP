@@ -233,6 +233,20 @@ def run_autocenter_migrations():
         )
     ''')
 
-    
+    def seed_default_categories(conn):
+        cur = conn.cursor()
+        default_categories = [
+            "Motor", "Alimentação", "Ignição", "Arrefecimento", "Lubrificação",
+            "Admissão e Escape", "Transmissão", "Freios", "Suspensão", "Direção",
+            "Rodas e Cubos", "Sistema Elétrico", "Iluminação", "Sensores e Eletrônica",
+            "Climatização", "Carroceria", "Vidros", "Limpadores", "Interior",
+            "Fechaduras e Segurança", "Borrachas e Vedação", "Fixação",
+            "Fluidos e Produtos Químicos", "Acessórios"
+        ]
+        for nome in default_categories:
+            cur.execute("SELECT id FROM categories WHERE nome = ?", (nome,))
+            if not cur.fetchone():
+                cur.execute("INSERT INTO categories (nome, margem_padrao) VALUES (?, 0)", (nome,))
+            
     conn.commit()
     conn.close()

@@ -69,7 +69,7 @@ def process_nfe_xml(xml_content: str):
 
         # 4. MATCHING DE PRODUTOS
         # Cache temporário para reduzir acessos sequenciais ao banco
-        cur.execute("SELECT id, nome_normalizado, codigo_barras, ncm, referencia, fornecedor_id, custo, estoque_atual FROM products")
+        cur.execute("SELECT id, nome_normalizado, codigo_barras, ncm, referencia, fornecedor_id, custo, estoque_atual, categoria_id FROM products")
         all_products = [dict(row) for row in cur.fetchall()]
 
         for item in nfe_data['items']:
@@ -108,6 +108,16 @@ def process_nfe_xml(xml_content: str):
                 new_cost = item['vUnCom']
                 
                 cur.execute("UPDATE products SET custo = ? WHERE id = ?", (new_cost, product_id))
+
+                # NOVO: se o produto ainda não tem categoria, tenta adivinhar agora
+                if not matched_product.get('categoria_id'):
+                    categoria_guess = categorization_service.guess_category_id(item['NCM'], item['xProd'], conn=conn)
+                    if categoria_guess:
+                        cur.execute("UPDATE products SET categoria_id = ? WHERE id = ?", (categoria_guess, product_id))
+                        cur.execute("""
+                            INSERT INTO audit_log (entidade, entidade_id, acao, origem, payload)
+                            VALUES ('product', ?, 'update_categoria', 'nfe_xml_import', ?)
+                        """, (product_id, json.dumps({"categoria_id": categoria_guess, "fonte_categoria": "auto"})))
                 
                 cur.execute("""
                     INSERT INTO audit_log (entidade, entidade_id, acao, origem, before_payload, after_payload)
