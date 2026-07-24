@@ -248,5 +248,7 @@ def run_autocenter_migrations():
             if not cur.fetchone():
                 cur.execute("INSERT INTO categories (nome, margem_padrao) VALUES (?, 0)", (nome,))
             
+    seed_default_categories(conn)
+        
     conn.commit()
     conn.close()

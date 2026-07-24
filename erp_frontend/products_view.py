@@ -186,6 +186,10 @@ class ProductModal(ctk.CTkToplevel):
                 conn.close()
                 if cat_row:
                     self.cb_categoria.set(cat_row['nome'])
+            
+            # Se o produto novo tem NCM (veio da NF-e), bloqueia a edição da categoria.
+            if self.initial_data.get('ncm'):
+                self.cb_categoria.configure(state='disabled')
 
             self.ent_margem.insert(0, "0.00")
             self._update_margin_color(0.0)
@@ -195,7 +199,6 @@ class ProductModal(ctk.CTkToplevel):
         cur = conn.cursor()
         cur.execute("SELECT * FROM products WHERE id = ?", (self.product_id,))
         row = cur.fetchone()
-        conn.close()
 
         if row:
             self.ent_nome.insert(0, row['nome'] or "")
@@ -218,6 +221,12 @@ class ProductModal(ctk.CTkToplevel):
                 cat_row = cur.fetchone()
                 if cat_row:
                     self.cb_categoria.set(cat_row['nome'])
+            
+            # Se o produto existente tem NCM, bloqueia a edição da categoria.
+            if row['ncm']:
+                self.cb_categoria.configure(state='disabled')
+        
+        conn.close()
         self.on_price_change()
 
     def _update_margin_color(self, margem: float):
