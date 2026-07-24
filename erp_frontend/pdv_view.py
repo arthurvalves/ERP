@@ -65,6 +65,9 @@ class PaymentModal(ctk.CTkToplevel):
         self.current_payment_idx = 0
         self.customer_id = None
         
+        self.setup_ui()
+        self.bind_shortcuts()
+        
     def setup_ui(self):
         self.lbl_total = ctk.CTkLabel(self, text=f"TOTAL DA VENDA: R$ {self.total:.2f}", font=("Roboto", 48, "bold"), text_color="#2ecc71")
         self.lbl_total.pack(pady=20)
@@ -148,8 +151,11 @@ class PaymentModal(ctk.CTkToplevel):
     def calc_troco(self, event=None):
         try:
             val = float(self.ent_recebido.get().replace(",", "."))
-            try: desc = float(self.ent_desconto.get().replace(",", "."))
-            except ValueError: desc = 0.0
+            desc = 0.0
+            try:
+                desc = float(self.ent_desconto.get().replace(",", "."))
+            except ValueError:
+                pass
             novo_total = max(0.0, self.total - desc)
             troco = val - novo_total
             if troco >= 0:
@@ -158,12 +164,16 @@ class PaymentModal(ctk.CTkToplevel):
                 self.lbl_troco.configure(text=f"Faltam: R$ {abs(troco):.2f}", text_color="#e74c3c")
         except ValueError:
             self.lbl_troco.configure(text="Troco: R$ 0.00", text_color="#f1c40f")
-            
+
+    def select_customer_for_credit(self):
+        """Abre o modal de busca de cliente e atualiza o ID do cliente."""
+        from erp_frontend.modals.customer_search_modal import CustomerSearchModal
         dialog = CustomerSearchModal(self)
         customer_id = dialog.get_input()
         if customer_id:
             self.customer_id = customer_id
-            self.update_customer_label()
+            # Idealmente, teríamos um self.update_customer_label() aqui
+            messagebox.showinfo("Cliente Selecionado", f"Cliente ID {customer_id} selecionado para a venda.")
 
     def confirm(self):
         try:
@@ -193,7 +203,8 @@ class PaymentModal(ctk.CTkToplevel):
                 return
             if not self.customer_id:
                 messagebox.showerror("Cliente não Selecionado", "É obrigatório selecionar um cliente para vendas no crediário.")
-                self.select_customer_for_credit() # Tenta de novo
+                self.select_customer_for_credit()
+                return # Retorna para o usuário tentar confirmar novamente após selecionar
 
         items = [{'product_id': i['product'].id, 'quantidade': i['quantidade'], 'preco_unitario': i['preco_unitario'], 'desconto_item': i.get('desconto_item', 0.0)} for i in self.cart]
         try:
@@ -202,11 +213,23 @@ class PaymentModal(ctk.CTkToplevel):
             printer_name = get_default_printer()
             text_receipt = generate_receipt_text(sale_id, self.cart, final_total, payment_method, desc_total)
 
-            # DISPARO DA IMPRESSÃO DO CUPOM 80MM
-            
-            # Comunicação Direta LPT1/COM1 ESC/POS
-            try: os.startfile(filepath) 
-            except: pass
+            if printer_name == "PDF (Salvar arquivo)":
+                import os
+                desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
+                filepath = os.path.join(desktop, f"cupom_venda_{sale_id}.pdf")
+                save_receipt_pdf(text_receipt, filepath)
+                messagebox.showinfo("Cupom Salvo em PDF", f"O cupom da venda foi salvo como PDF em:\n{filepath}")
+            else:
+                # Para impressoras térmicas, gera um arquivo .txt que pode ser enviado diretamente.
+                try:
+                    import os
+                    from erp_backend.services.printer_service import save_receipt_txt
+                    desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
+                    filepath = os.path.join(desktop, f"cupom_venda_{sale_id}.txt")
+                    save_receipt_txt(text_receipt, filepath)
+                    messagebox.showinfo("Cupom de Texto Gerado", f"Cupom salvo como '{os.path.basename(filepath)}' na sua Área de Trabalho.\n\nEnvie este arquivo para sua impressora térmica.")
+                except Exception as print_error:
+                    messagebox.showerror("Erro de Impressão", f"Não foi possível imprimir o cupom.\n\n{print_error}")
 
             self.on_success()
             self.destroy()

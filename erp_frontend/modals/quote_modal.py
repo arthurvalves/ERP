@@ -168,4 +168,27 @@ class QuoteModal(ctk.CTkToplevel):
         if not code: return
 
         conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id, nome, sku, codigo_barras, preco_venda, is_servico FROM products WHERE sku = ? OR codigo_barras = ?", (code, code))
+        row = cur.fetchone()
+        conn.close()
+
+        if not row:
+            messagebox.showwarning("Não Encontrado", f"Peça/Serviço '{code}' não localizado no sistema.")
+            return
+
+        self.items.append({
+            'product_id': row['id'],
+            'tipo': 'servico' if row['is_servico'] else 'peca',
+            'nome': row['nome'],
+            'codigo': row['sku'] or row['codigo_barras'],
+            'quantidade': qtd,
+            'preco_unitario': row['preco_venda'] or 0.0,
+        })
+
+        self.ent_code.delete(0, 'end')
+        self.ent_qtd.delete(0, 'end')
+        self.ent_qtd.insert(0, "1")
+        self.refresh_items()
+        self.ent_code.focus_set()
       

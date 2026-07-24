@@ -56,16 +56,17 @@ class OSPostActionModal(ctk.CTkToplevel):
         printer_name = get_default_printer()
         text_receipt = generate_os_receipt_text(self.os_data.get('id', 0), self.os_data, self.items)
 
-        if "PDF" in printer_name:
-            project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-            filename = f"Cupom_OS_{self.os_data.get('id', 0):05d}.pdf"
-            filepath = os.path.join(project_root, filename)
-
+        desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
+        
+        if printer_name == "PDF (Salvar arquivo)":
+            filepath = os.path.join(desktop, f"Cupom_OS_{self.os_data.get('id', 0):05d}.pdf")
             save_receipt_pdf(text_receipt, filepath)
-            messagebox.showinfo("PDF Gerado", f"O recibo foi salvo como '{filename}' na pasta do projeto.")
-            try:
-                os.startfile(filepath)
-            except Exception:
-                pass
+            messagebox.showinfo("Cupom Salvo em PDF", f"O cupom da OS foi salvo como PDF em:\n{filepath}")
         else:
-            print(f"--- ENVIANDO PARA IMPRESSORA {printer_name} ---\n{text_receipt}")
+            from erp_backend.services.printer_service import save_receipt_txt
+            filepath = os.path.join(desktop, f"Cupom_OS_{self.os_data.get('id', 0):05d}.txt")
+            save_receipt_txt(text_receipt, filepath)
+            messagebox.showinfo("Cupom de Texto Gerado", f"Cupom da OS salvo como '{os.path.basename(filepath)}' na sua Área de Trabalho.\n\nEnvie este arquivo para sua impressora térmica.")
+        
+        try: os.startfile(filepath)
+        except Exception: pass

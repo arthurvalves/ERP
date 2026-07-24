@@ -133,3 +133,11 @@ def save_receipt_pdf(text: str, filepath: str):
         c.drawString(10, y, line)
         y -= 12
     c.save()
+
+def save_receipt_txt(text: str, filepath: str):
+    """Salva o texto do cupom em um arquivo .txt simples, ideal para impressoras térmicas."""
+    try:
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(text)
+    except IOError as e:
+        raise IOError(f"Não foi possível salvar o arquivo de texto do cupom: {e}") from e

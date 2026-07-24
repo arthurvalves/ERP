@@ -469,9 +469,9 @@ class OSModal(ctk.CTkToplevel):
                 
                 # Atualiza o status da OS na mesma transação
                 conn.execute("UPDATE service_orders SET status='Faturada', data_fechamento=CURRENT_TIMESTAMP WHERE id=?", (self.os_id,))
+                vehicle = vehicle_service.get_vehicle_by_id(self.vehicle_id, conn=conn)
                 
             self.cb_status.set("Faturada")
-            vehicle = vehicle_service.get_vehicle_by_id(self.vehicle_id, conn=conn)
             os_data_final = {
                 'id': self.os_id,
                 'placa': vehicle.plate if vehicle else "N/A",
